@@ -21,5 +21,25 @@ if __name__ == "__main__":
         config = json.load(file)
     api_key = config['PLACES_API_KEY']
 
-    restaurant_json = get_google_places(LOCATION, RADIUS, LOCATION_TYPE, api_key)
-    print(restaurant_json['results'][0].keys())
+    restaurant_json = get_google_places(LOCATION, RADIUS, LOCATION_TYPE, api_key)['results']
+
+    # Output the total number of restaurants found
+    res = []
+    print(f"Total restaurants found: {len(restaurant_json)}")
+    print(restaurant_json[0].keys())
+
+    for r in restaurant_json:
+        res.append(
+            {
+                "place_id": r['place_id'],
+                "name": r['name'],
+                "rating": r['rating'],
+                "business_status": r['business_status']
+            }
+        )
+    
+    # Write reviews to a JSON file
+    with open('test_data/restaurants.json', 'w') as file:
+        json.dump(res, file, indent=4)
+
+    print("Restaurants have been written to restaurants.json")
