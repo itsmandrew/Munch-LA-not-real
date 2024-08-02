@@ -44,10 +44,12 @@ def main():
     for r in restaurant_json:
         restaurant_details = get_place_details(r['place_id'], api_key)
         reviews = [review['text'] for review in restaurant_details.get('reviews', [])]
+        address = restaurant_details.get('formatted_address')
 
         restaurant_data = {
             "place_id": r['place_id'],
             "name": r['name'],
+            "address": address,
             "rating": r['rating'],
             "business_status": r.get('business_status', 'UNKNOWN'),
             "reviews": reviews
