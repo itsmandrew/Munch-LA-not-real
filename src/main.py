@@ -92,13 +92,12 @@ if __name__ == "__main__":
     
     chroma_client, collection = chromadb_init()
     
-    #add_documents_to_collection(documents, metadata, collection)
-    print(collection.count())
 
     res = collection.query(
-    query_texts=["i want curry"],
-    n_results=3,
-    include=["metadatas"])
+        query_texts=["i want curry"],
+        n_results=3,
+        include=["metadatas", "documents"]
+    )
 
     list_of_names = [struct['name'] for struct in res['metadatas'][0]]
     print(list_of_names)
