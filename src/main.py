@@ -96,7 +96,7 @@ if __name__ == "__main__":
     print(collection.count())
 
     res = collection.query(
-    query_texts=["I want sushi"],
+    query_texts=["i want curry"],
     n_results=3,
     include=["metadatas"])
 
