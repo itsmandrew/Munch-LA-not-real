@@ -3,7 +3,9 @@ from openai import OpenAI
 import nltk
 from nltk.corpus import stopwords
 from nltk.tokenize import word_tokenize
-import numpy as np
+import chromadb
+from chromadb.config import Settings
+
 
 nltk.download('punkt')
 nltk.download('stopwords')
@@ -30,7 +32,6 @@ def clean_text(text):
     tokens = [word for word in tokens if word.isalpha() and word not in stop_words]
     return ' '.join(tokens)
 
-
 def documents_init():
     # Load your data
     with open('test_data/restaurants_with_reviews.json', 'r') as file:
@@ -38,7 +39,7 @@ def documents_init():
 
     documents = [clean_text(f"{restaurant['name']} {restaurant['address']} {restaurant['reviews']}") for restaurant in restaurants]
 
-    return documents
+    return documents, restaurants
 
 def get_embeddings(text_list, client):
     embeddings = []
@@ -47,10 +48,25 @@ def get_embeddings(text_list, client):
         embeddings.append(response)
     return embeddings
 
+def chromadb_init():
+    # Initialize ChromaDB client
+    chroma_client = chromadb.Client(Settings(
+        chroma_db_impl="sqlite",
+        persist_directory="chromadb_storage"
+    ))
+
+    return chroma_client
 
 
 if __name__ == "__main__":
+
+    # Basic initialization for OpenAI embedder
     client = open_ai_init()
-    documents = documents_init()
+    documents, restaurants = documents_init()
     embeddings = get_embeddings(documents, client)
-    print(embeddings)
+
+    # Setting up vector store
+    chroma_client = chromadb_init()
+
+    # Create or get a collection
+    collection = chroma_client.get_or_create_collection(name="restaurant_embeddings")
