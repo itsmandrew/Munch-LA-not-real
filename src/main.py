@@ -4,7 +4,7 @@ import nltk
 from nltk.corpus import stopwords
 from nltk.tokenize import word_tokenize
 import chromadb
-from chromadb.config import Settings
+import chromadb.utils.embedding_functions as embedding_functions
 
 
 nltk.download('punkt')
@@ -50,23 +50,39 @@ def get_embeddings(text_list, client):
 
 def chromadb_init():
     # Initialize ChromaDB client
-    chroma_client = chromadb.Client(Settings(
-        chroma_db_impl="sqlite",
-        persist_directory="chromadb_storage"
-    ))
+    client = chromadb.PersistentClient(path="chroma_db")
 
-    return chroma_client
+    collection = client.get_or_create_collection(
+        name="restaurant_collection",
+        metadata={"hnsw:space": "cosine"} # l2 is the default
+    )
+
+    return client, collection
+
+
+def add_embeddings_to_collection(embeddings, documents, collection):
+    for i, embedding in enumerate(embeddings):
+        collection.add(embeddings=[embedding], metadatas=[documents[i]], ids=[str(i)])
 
 
 if __name__ == "__main__":
 
     # Basic initialization for OpenAI embedder
-    client = open_ai_init()
+    # client = open_ai_init()
     documents, restaurants = documents_init()
-    embeddings = get_embeddings(documents, client)
 
-    # Setting up vector store
-    chroma_client = chromadb_init()
+    with open('config.json', 'r') as file:
+        config = json.load(file)
+        OPEN_AI_ORG_ID = config['OPEN_AI_ORG_ID']
+        OPEN_AI_PROJECT_ID = config['OPEN_AI_PROJECT_ID']
+        OPEN_AI_API_KEY = config['OPEN_AI_API_KEY']
 
-    # Create or get a collection
-    collection = chroma_client.get_or_create_collection(name="restaurant_embeddings")
+    openai_ef = embedding_functions.OpenAIEmbeddingFunction(
+            api_key=OPEN_AI_API_KEY,
+            model_name="text-embedding-3-small"
+        )
+    
+    chroma_client, collection = chromadb_init()
+    
+
+
