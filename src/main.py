@@ -50,39 +50,64 @@ def get_embeddings(text_list, client):
 
 def chromadb_init():
     # Initialize ChromaDB client
-    client = chromadb.PersistentClient(path="chroma_db")
-
-    collection = client.get_or_create_collection(
-        name="restaurant_collection",
-        metadata={"hnsw:space": "cosine"} # l2 is the default
-    )
-
-    return client, collection
-
-
-def add_embeddings_to_collection(embeddings, documents, collection):
-    for i, embedding in enumerate(embeddings):
-        collection.add(embeddings=[embedding], metadatas=[documents[i]], ids=[str(i)])
-
-
-if __name__ == "__main__":
-
-    # Basic initialization for OpenAI embedder
-    # client = open_ai_init()
-    documents, restaurants = documents_init()
-
     with open('config.json', 'r') as file:
         config = json.load(file)
-        OPEN_AI_ORG_ID = config['OPEN_AI_ORG_ID']
-        OPEN_AI_PROJECT_ID = config['OPEN_AI_PROJECT_ID']
         OPEN_AI_API_KEY = config['OPEN_AI_API_KEY']
 
     openai_ef = embedding_functions.OpenAIEmbeddingFunction(
             api_key=OPEN_AI_API_KEY,
             model_name="text-embedding-3-small"
         )
+    client = chromadb.PersistentClient(path="chroma_db")
+
+    collection = client.get_or_create_collection(name="restaurant_collection", 
+                                                        embedding_function=openai_ef, 
+                                                        metadata={"hnsw:space": "cosine"}) # l2 is the default)
+    
+    return client, collection
+
+def add_documents_to_collection(documents, metadata, collection):
+    for i, d in enumerate(documents):
+        collection.add(documents=[d], metadatas=[metadata[i]], ids=[str(i)])
+
+# Function to format restaurant data for metadata
+def format_restaurant_data(restaurants):
+    formatted_data = []
+    for restaurant in restaurants:
+        formatted_data.append({
+            "place_id": restaurant['place_id'],
+            "name": restaurant['name'],
+            "address": restaurant['address'],
+            "rating": restaurant['rating']
+        })
+    return formatted_data
+
+
+if __name__ == "__main__":
+
+    # Creating documents for vector store + metadata
+    documents, restaurants = documents_init()
+    metadata = format_restaurant_data(restaurants)
+
     
     chroma_client, collection = chromadb_init()
     
+    #add_documents_to_collection(documents, metadata, collection)
+    print(collection.count())
+
+    res = collection.query(
+    query_texts=["I want sushi"],
+    n_results=3,
+    include=["metadatas"])
+
+    list_of_names = [struct['name'] for struct in res['metadatas'][0]]
+    print(list_of_names)
+
+
+    
+
+
+
+
 
 
