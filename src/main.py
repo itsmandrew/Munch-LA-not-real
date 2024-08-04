@@ -44,7 +44,7 @@ def get_embeddings(text_list, client):
     embeddings = []
     for text in text_list:
         response = client.embeddings.create(input=text, model='text-embedding-3-small')
-        embeddings.append(response['data'][0]['embedding'])
+        embeddings.append(response)
     return embeddings
 
 
