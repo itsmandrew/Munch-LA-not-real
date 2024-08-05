@@ -25,14 +25,32 @@ def get_google_places_key():
     return api_key
 
 
-def get_google_places(location, radius, location_type, api_key):
-    place_search_url = f"https://maps.googleapis.com/maps/api/place/nearbysearch/json?location={location}&radius={radius}&type={location_type}&key={api_key}"
+def get_google_search_places(api_key, query):
+    url = 'https://places.googleapis.com/v1/places:searchText'
 
-    response = requests.get(place_search_url)
-    restaurants = response.json()
+    headers = {
+        'Content-Type': 'application/json',
+        'X-Goog-Api-Key': api_key,
+        'X-Goog-FieldMask': """places.id,places.displayName,places.formattedAddress,places.types,places.rating,places.userRatingCount,places.priceLevel,nextPageToken"""
+    }
 
-    return restaurants
+    data = {
+        "textQuery": query,
+        "pageSize": 3
+    }
+
+    response = requests.post(url, headers=headers, data=json.dumps(data))
+    
+    if response.status_code == 200:
+        return response.json()
+    else:
+        print(f"Error: {response.status_code}")
+        print(response.text)
+        return None
 
 
 if __name__ == "__main__":
-    print(get_google_places_key())
+    api_key= get_google_places_key()
+    res = get_google_search_places(api_key, "restaurants in Los Angeles")
+
+    print(json.dumps(res, indent=4))
