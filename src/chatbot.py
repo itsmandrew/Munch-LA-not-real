@@ -105,7 +105,7 @@ if __name__ == "__main__":
     
         
         # Invoke the RAG chain with the formatted prompt
-        response = rag_chain_invoke(user_input)
+        response = rag_chain.invoke(user_input)
         # Print the response
         print(response)
 
