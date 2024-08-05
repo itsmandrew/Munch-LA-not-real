@@ -3,6 +3,7 @@ from langchain_openai import OpenAIEmbeddings
 from langchain_openai import ChatOpenAI
 from langchain_core.output_parsers import StrOutputParser
 from langchain_core.runnables import RunnablePassthrough
+from langchain.prompts import PromptTemplate
 from langchain import hub
 import chromadb
 import json
@@ -34,7 +35,14 @@ def chromadb_init():
 
 
 def format_docs(docs):
-    return "\n\n".join(doc.page_content for doc in docs)
+    res = ""
+    for doc in docs:
+        res += "Reviews: " + doc.page_content + "\n"
+        res += "Metadata: " + json.dumps(doc.metadata, indent=4) + "\n"
+        res += "\n\n"
+         
+
+    return res
 
 
 if __name__ == "__main__":
@@ -48,10 +56,36 @@ if __name__ == "__main__":
     # Loading from ChromaDB directory ON DISK
     langchain_chroma = chromadb_init()
 
-    retriever = langchain_chroma.as_retriever()
+    retriever = langchain_chroma.as_retriever(search_kwargs={"k": 3})
+
 
     llm = ChatOpenAI(api_key=OPEN_AI_API_KEY, model="gpt-4o-mini")
-    prompt = hub.pull("rlm/rag-prompt")
+    prompt = PromptTemplate.from_template(
+        template="""
+        Guidelines:
+        1. Use the provided context and metadata to recommend a restaurant in the Los Angeles area.
+        2. Sort the restaurants based on their ratings, from highest to lowest.
+
+        Format your response as follows:
+        _____________________________________________
+
+        Restaurant Name
+        * Address: address_of_restaurant
+
+        What customers think about this restaurant:
+        * Summary of customer reviews
+        * Popular foods (be specific)
+
+        ____________________________________________
+
+        Context and metadata:
+        {context}
+
+        Question: {question}
+
+        Helpful Answer:
+        """.strip()
+)
 
     rag_chain = (
     {"context": retriever | format_docs, "question": RunnablePassthrough()}
@@ -60,6 +94,18 @@ if __name__ == "__main__":
     | StrOutputParser()
     )
 
-    response = rag_chain.invoke("give me some sushi spots to eat")
-    print(response)
+    # While loop to continuously prompt for user input and generate responses
+    while True:
+        # Get user input
+        user_input = input("Enter your question (or type 'exit' to quit): ")
+        
+        # Exit condition
+        if user_input.lower() == 'exit':
+            break
+    
+        
+        # Invoke the RAG chain with the formatted prompt
+        response = rag_chain_invoke(user_input)
+        # Print the response
+        print(response)
 
