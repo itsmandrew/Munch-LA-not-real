@@ -25,32 +25,55 @@ def get_google_places_key():
     return api_key
 
 
-def get_google_search_places(api_key, query):
+def get_google_search_places(api_key, query, max_results=100):
     url = 'https://places.googleapis.com/v1/places:searchText'
-
     headers = {
         'Content-Type': 'application/json',
         'X-Goog-Api-Key': api_key,
-        'X-Goog-FieldMask': """places.id,places.displayName,places.formattedAddress,places.types,places.rating,places.userRatingCount,places.priceLevel,nextPageToken"""
+        'X-Goog-FieldMask': "places.id,places.displayName,places.formattedAddress,places.types,places.rating,places.userRatingCount,places.priceLevel,nextPageToken"
     }
-
     data = {
         "textQuery": query,
-        "pageSize": 3
+        "pageSize": 20
     }
 
-    response = requests.post(url, headers=headers, data=json.dumps(data))
-    
-    if response.status_code == 200:
-        return response.json()
-    else:
-        print(f"Error: {response.status_code}")
-        print(response.text)
-        return None
+    all_results = []
+    next_page_token = None
+
+    while len(all_results) < max_results:
+        if next_page_token:
+            data["pageToken"] = next_page_token
+
+        response = requests.post(url, headers=headers, json=data)
+        
+        if response.status_code == 200:
+            result = response.json()
+            places = result.get('places', [])
+            all_results.extend(places)
+            
+            next_page_token = result.get('nextPageToken')
+            if not next_page_token:
+                break
+        else:
+            print(f"Error: {response.status_code}")
+            print(response.text)
+            break
+
+    return all_results[:max_results]
+
+
+def write_results_to_file(results):
+    with open('test_data/medium-meh/restaurants.json', 'w', encoding='utf-8') as f:
+        json.dump(results, f, ensure_ascii=False, indent=4)
+    print("finished writing")
 
 
 if __name__ == "__main__":
-    api_key= get_google_places_key()
-    res = get_google_search_places(api_key, "restaurants in Los Angeles")
+    api_key = get_google_places_key()
+    res = get_google_search_places(api_key, "Restaurants in Los Angeles", 100)
 
-    print(json.dumps(res, indent=4))
+    for i, c in enumerate(res):
+        print(i)
+    write_results_to_file(res)
+
+
