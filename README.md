@@ -13,7 +13,7 @@ A chatbot designed to help users find food options in the Los Angeles area. This
 ### Prerequisites
 
 - [Conda](https://docs.conda.io/projects/conda/en/latest/user-guide/install/index.html) (for environment management)
-- [Python](https://www.python.org/downloads/) (v. 3.10)s
+- [Python](https://www.python.org/downloads/) (version 3.10)
 
 ### Setup
 
