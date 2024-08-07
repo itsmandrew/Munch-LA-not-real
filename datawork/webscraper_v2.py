@@ -63,17 +63,23 @@ def get_google_search_places(api_key, query, max_results=100):
 
 
 def write_results_to_file(results):
-    with open('test_data/medium-meh/restaurants.json', 'w', encoding='utf-8') as f:
+    with open('test_data/medium-meh/restaurants.json', 'a', encoding='utf-8') as f:
         json.dump(results, f, ensure_ascii=False, indent=4)
     print("finished writing")
 
 
+
 if __name__ == "__main__":
     api_key = get_google_places_key()
-    res = get_google_search_places(api_key, "Restaurants in Los Angeles", 100)
+    cities = ['Arcadia, CA', 'Little Tokyo, LA', 'Koreatown, LA', 'Irvine, CA', 'West Hollywood, CA', 'Santa Monica, CA', 'Beverly Hill']
+    res = get_google_search_places(api_key, "Restaurants in Los Angeles", 60)
+    
 
-    for i, c in enumerate(res):
-        print(i)
-    write_results_to_file(res)
+    for c in cities:
+        res = get_google_search_places(api_key, f"Restaurants in {c}", 60)
+        print(len(res))
+        write_results_to_file(res)
 
-
+    
+    
+    
