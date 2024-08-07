@@ -1,6 +1,7 @@
 import requests
 import json
 
+"""DEPRECATED DO NOT THIS SCRIPT ANYMORE"""
 
 def get_google_places(location, radius, location_type, api_key):
     place_search_url = f"https://maps.googleapis.com/maps/api/place/nearbysearch/json?location={location}&radius={radius}&type={location_type}&key={api_key}"
