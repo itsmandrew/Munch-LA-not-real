@@ -62,6 +62,25 @@ def get_google_search_places(api_key, query, max_results=100):
     return all_results[:max_results]
 
 
+def get_place_details(place_id, api_key):
+    url = f"https://maps.googleapis.com/maps/api/place/details/json?place_id={place_id}&fields=reviews&key={api_key}"
+    response = requests.get(url)
+    if response.status_code == 200:
+        result = response.json().get('result', {})
+        return result
+    else:
+        print(f"Error: {response.status_code}")
+        return None
+
+def read_existing_results(filename):
+    if os.path.exists(filename):
+        with open(filename, 'r', encoding='utf-8') as f:
+            return json.load(f)
+    return []
+
+
+
+
 def write_results_to_file(results):
     with open('test_data/medium-meh/restaurants.json', 'a', encoding='utf-8') as f:
         json.dump(results, f, ensure_ascii=False, indent=4)
@@ -80,6 +99,10 @@ if __name__ == "__main__":
         print(len(res))
         write_results_to_file(res)
 
+
+    json_restaurants = read_existing_results('test_data/medium-meh/restaurants.json')
+    for r in json_restaurants[0:2]:
+        print(r)
     
     
     
