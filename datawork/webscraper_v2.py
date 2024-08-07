@@ -100,58 +100,47 @@ def create_restaurants():
         write_results_to_file('test_data/medium-meh/restaurants.json', restaurants)
 
 if __name__ == "__main__":
+    
     api_key = get_google_places_key()
-    cities = ['Arcadia, CA', 'Little Tokyo in Los Angeles', 'Koreatown in Los Angeles', 'Irvine, CA', 'West Hollywood, CA', 'Santa Monica, CA', 'Beverly Hills, CA']
+    res, count = [], 0
+    json_restaurants = read_existing_results('test_data/medium-meh/restaurants.json')
 
-    restaurants = []
-    for c in cities:
-        restaurants = []
-        query = f"Restaurants in {c}"
-        restaurants.append(get_google_search_places(api_key, query, 60))
-        write_results_to_file('test_data/medium-meh/restaurants.json', restaurants)
-
-
-
-    # res, count = [], 0
-    # json_restaurants = read_existing_results('test_data/medium-meh/restaurants.json')
-
-    # for r in json_restaurants[0:1]:
-
+    for r in json_restaurants[0:1]:
         
-    #     restaurant_details = get_place_details(r['id'], api_key)
-    #     reviews = [review['text'] for review in restaurant_details.get('reviews', [])]
+        restaurant_details = get_place_details(r['id'], api_key)
+        reviews = [review['text'] for review in restaurant_details.get('reviews', [])]
 
-    #     restaurant_data = {
-    #         "place_id": r['id'],
-    #         "name": r['displayName']['text'],
-    #         "keywords": r['types'],
-    #         "address": r.get('formattedAddress', 'Unknown'),
-    #         "rating": r.get('rating', 'Unknown'),
-    #         "price_level": r.get('priceLevel', 'Unknown'),
-    #         "num_of_reviews": r.get("userRatingCount", 'Unknown'),
-    #         "reviews": reviews
-    #     }
+        restaurant_data = {
+            "place_id": r['id'],
+            "name": r['displayName']['text'],
+            "keywords": r['types'],
+            "address": r.get('formattedAddress', 'Unknown'),
+            "rating": r.get('rating', 'Unknown'),
+            "price_level": r.get('priceLevel', 'Unknown'),
+            "num_of_reviews": r.get("userRatingCount", 'Unknown'),
+            "reviews": reviews
+        }
 
-    #     res.append(restaurant_data)
-    #     count += 1
+        res.append(restaurant_data)
+        count += 1
         
-    #     # Handles large batches
-    #     if count % 60 == 0:
-    #         print(f"{count // 60} batch done.")
-    #         # Write JSON structure to a JSON file
-    #         with open('test_data/medium-meh/restaurants_with_reviews.json', 'w') as file:
-    #             json.dump(res, file, indent=4)
+        # Handles large batches
+        if count % 60 == 0:
+            print(f"{count // 60} batch done.")
+            # Write JSON structure to a JSON file
+            with open('test_data/medium-meh/restaurants_with_reviews.json', 'w') as file:
+                json.dump(res, file, indent=4)
 
-    #         res = []
+            res = []
         
 
 
-    #     with open('test_data/medium-meh/restaurants_with_reviews.json', 'w') as file:
-    #         json.dump(res, file, indent=4)
+    with open('test_data/medium-meh/restaurants_with_reviews.json', 'w') as file:
+        json.dump(res, file, indent=4)
 
 
 
-    # print("Restaurants with reviews have been written to restaurants_with_reviews.json")
+    print("Restaurants with reviews have been written to restaurants_with_reviews.json")
 
     
     
