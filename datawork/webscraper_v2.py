@@ -99,13 +99,12 @@ def create_restaurants():
         restaurants.append(get_google_search_places(api_key, query, 60))
         write_results_to_file('test_data/medium-meh/restaurants.json', restaurants)
 
-if __name__ == "__main__":
-    
+def create_restaurants_with_reviews():
     api_key = get_google_places_key()
     res, count = [], 0
     json_restaurants = read_existing_results('test_data/medium-meh/restaurants.json')
-
-    for r in json_restaurants[0:1]:
+    print(len(json_restaurants))
+    for r in json_restaurants:
         
         restaurant_details = get_place_details(r['id'], api_key)
         reviews = [review['text'] for review in restaurant_details.get('reviews', [])]
@@ -128,20 +127,25 @@ if __name__ == "__main__":
         if count % 60 == 0:
             print(f"{count // 60} batch done.")
             # Write JSON structure to a JSON file
-            with open('test_data/medium-meh/restaurants_with_reviews.json', 'w') as file:
+            with open('test_data/medium-meh/restaurants_with_reviews.json', 'a') as file:
                 json.dump(res, file, indent=4)
-
             res = []
+            time.sleep(2)
         
 
 
-    with open('test_data/medium-meh/restaurants_with_reviews.json', 'w') as file:
+    with open('test_data/medium-meh/restaurants_with_reviews.json', 'a') as file:
         json.dump(res, file, indent=4)
 
 
 
     print("Restaurants with reviews have been written to restaurants_with_reviews.json")
 
+
+if __name__ == "__main__":
+
     
+    json_restaurants_w_reviews = read_existing_results('test_data/medium-meh/restaurants.json')
+    print(len(json_restaurants_w_reviews))
     
     
