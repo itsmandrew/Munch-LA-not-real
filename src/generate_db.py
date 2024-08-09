@@ -9,7 +9,7 @@ from langchain.text_splitter import RecursiveCharacterTextSplitter
 from langchain_openai import ChatOpenAI
 from langchain_core.prompts import PromptTemplate
 
-def documents_init():
+def documents_init(path):
     """
     Generates summarized documents for each restaurant based on customer reviews.
 
@@ -27,7 +27,7 @@ def documents_init():
     """
 
     # Load your restaurant JSON data
-    with open('../test_data/medium-meh/restaurants_with_reviews.json', 'r') as file:
+    with open(path, 'r') as file:
         restaurants = json.load(file)
 
     # Get your API key
@@ -183,7 +183,7 @@ def split_documents_and_add_to_collection(documents, metadata, collection):
 if __name__ == "__main__":
 
     # Creating documents for vector store + metadata
-    documents, restaurants = documents_init()
+    documents, restaurants = documents_init('test_data/medium-meh/restaurants_with_reviews.json')
     metadata = format_restaurant_data(restaurants)
     
     # Initialize client

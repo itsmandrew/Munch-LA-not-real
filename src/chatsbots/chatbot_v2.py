@@ -1,18 +1,12 @@
 from langchain_chroma import Chroma # type: ignore
 from langchain_openai import OpenAIEmbeddings
 from langchain_openai import ChatOpenAI
-from langchain_core.output_parsers import StrOutputParser
-from langchain_core.runnables import RunnablePassthrough
-from langchain.prompts import PromptTemplate
 from langchain_core.messages import HumanMessage
-from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
 from langchain_core.chat_history import BaseChatMessageHistory, InMemoryChatMessageHistory
 from langchain_core.runnables.history import RunnableWithMessageHistory
-from langchain_experimental.text_splitter import SemanticChunker # type: ignore
 from langchain import hub
 import chromadb # type: ignore
 import json
-import getpass
 import time
 
 # Define a function to get session history, storing chat history in memory
@@ -42,7 +36,7 @@ def chromadb_init():
                                                  metadata={"hnsw:space": "cosine"}) # l2 is the default)
     
     # Print the number of instances in the collection
-    print(f'Number of instances in DB: {collection.count()}')
+    print(f'Number of instances in DB: {collection.count()} \n')
     
     # Wrap ChromaDB client and collection into a LangChain Chroma object
     langchain_chroma = Chroma(
@@ -130,7 +124,7 @@ if __name__ == "__main__":
             find a restaurant to eat at or something like that.
         - If the provided list of restaurant data doesn't match what the user's asking for, then you can just use your pretrained
             data to answer their question as long as it's FOOD or RESTAURANT related
-        - Display the best 3-5 restaurants based off the user's query (if the restaurants listed are relevant to the query)
+        - Display the best 3 restaurants based off the user's query (if the restaurants listed are relevant to the query)
         
 
         Format your responses as follows, but only when we ask for information about the restaurants:
@@ -153,7 +147,7 @@ if __name__ == "__main__":
 
     # Loop to interact with the user and provide restaurant recommendations
     while True:
-        user_input = input("User: ")
+        user_input = input("Enter your question: ")
         
         if user_input == 'exit':
             break
@@ -162,7 +156,7 @@ if __name__ == "__main__":
         start_time = time.time()
         context = format_docs(retriever.invoke(user_input))
         end_time = time.time()
-        print("TIME TO QUERY: ", end_time-start_time)
+        print("Time to query: ", end_time-start_time)
 
         # Start timing the response generation process
         start_time = time.time()
@@ -177,4 +171,4 @@ if __name__ == "__main__":
         
         # Display the chatbot's response and the time it took to generate it
         print('\nBot: ', response.content, '\n')
-        print("TIME TO FOR GPT TO RESPOND: ", end_time-start_time)
+        print("GPT Response Time: ", end_time-start_time, '\n')
