@@ -10,7 +10,7 @@ def home(request):
 def langchain_response(request):
     # Example prompt
     user_input = request.GET.get('query', 'What are the best restaurants in LA?')
-    with open('/Users/andrewchang/Workspace/HELP-IM-HUNGRY/config.json', 'r') as file:
+    with open('../config.json', 'r') as file:
         config = json.load(file)
         OPEN_AI_API_KEY = config['OPEN_AI_API_KEY']
     # Initialize your LangChain LLM (replace with your model)
