@@ -5,8 +5,7 @@ from langchain.llms import OpenAI  # or any other model you're using
 import json
 
 def home(request):
-    return HttpResponse("<h1>Welcome to Munch LA!</h1><p>This is the home page.</p>")
-
+    return render(request, 'munch/index.html')
 
 def langchain_response(request):
     # Example prompt
