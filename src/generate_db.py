@@ -31,24 +31,33 @@ def documents_init(path):
         restaurants = json.load(file)
 
     # Get your API key
-    with open('config.json', 'r') as file:
+    with open('src/config.json', 'r') as file:
         config = json.load(file)
         OPEN_AI_API_KEY = config['OPEN_AI_API_KEY']
 
     # Template to summarize the reviews of the restaurant
     template = """
-    I will provide reviews of a restaurant. Please summarize give me a summary of the reviews in 1-2 sentences
-    
-    Must haves in the summary:
-    - What kind of food the restaurant serves (include every single food the restaurant serves)
-    - What the customers think of the restaurant (I want you to do this part based off the average of how customers feel)
+        I will provide you with reviews/info of a restaurant. Please summarize these reviews in 1-3 sentences.
 
-    Not Mandatory, but would be nice to have in the summary:
-    - Maybe things like the vibe/environment of the restaurant (this isn't mandatory, but if the reviews provide this information then it's good to add)
-    
+        ### Must Include in the Summary:
+        - A comprehensive list of all the food items mentioned in the reviews (include every single food the restaurant serves).
+        - A general summary of how customers feel about the restaurant, reflecting the overall sentiment.
+        - Key pros of the restaurant as highlighted by the reviews.
+        - Key cons of the restaurant as highlighted by the reviews.
+        - Price range (if given)
+        - Key descriptions of the restaurant
 
-    Reviews:
-    {reviews}
+        ### Optional to Include in the Summary:
+        - Information about the vibe or environment of the restaurant, but only if the reviews mention it specifically.
+
+        ### Reviews:
+        {reviews}
+
+        ### Price:
+        {price}
+
+        ### Key Descriptions of Restaurant:
+        {keywords}
     """
 
     # Create LLM chain
@@ -60,9 +69,11 @@ def documents_init(path):
     # Create docs for every restaurant with summarized reviews
     print('Creating documents with reviews summarized')
     for index, restaurant in enumerate(restaurants):
+        name = restaurant['name']
+        price = restaurant['price_level']
+        keywords = ', '.join(restaurant['keywords'])
         doc = ''
-        doc += 'Name: ' + str(restaurant['name']) + '\n'
-        rev = f"Reviews for {restaurant['name']}: \n"
+        rev = f"Reviews for {name}: \n"
 
         
         for review in restaurant['reviews']:
@@ -71,7 +82,7 @@ def documents_init(path):
             review += '\n\n'
             rev += review
 
-        rev_summary = llm_chain.invoke(rev).content
+        rev_summary = llm_chain.invoke({'reviews': rev, 'price': price, 'keywords': keywords}).content
         doc += rev_summary
         documents.append(doc)
         print(f'Summarized Doc #{index}')
@@ -98,7 +109,7 @@ def chromadb_init():
     """
 
     # Get API key
-    with open('config.json', 'r') as file:
+    with open('src/config.json', 'r') as file:
         config = json.load(file)
         OPEN_AI_API_KEY = config['OPEN_AI_API_KEY']
 
@@ -109,7 +120,7 @@ def chromadb_init():
         )
     
     # Create DB
-    client = chromadb.PersistentClient(path="chroma_db")
+    client = chromadb.PersistentClient(path="src/chroma_db")
     collection = client.get_or_create_collection(name="restaurant_collection_large", 
                                                         embedding_function=openai_ef, 
                                                         metadata={"hnsw:space": "cosine"}) # l2 is the default)
@@ -149,36 +160,27 @@ def format_restaurant_data(restaurants):
 # 
 def split_documents_and_add_to_collection(documents, metadata, collection):
     """
-    Splits documents into smaller chunks and adds them to a ChromaDB collection.
+    Adds documents and their corresponding metadata to a ChromaDB collection.
 
-    This function divides each document into smaller text chunks using a text splitter
-    to fit within a specified chunk size. It then adds these chunks to the ChromaDB
-    collection along with their corresponding metadata. The function ensures that the 
-    number of documents matches the number of metadata entries before adding them.
+    This function directly adds each document and its associated metadata to the
+    specified ChromaDB collection. It first checks that the number of documents matches 
+    the number of metadata entries. If they do not match, the function prints an error 
+    message and returns without adding any data.
 
     Args:
         documents (list of str): A list of documents containing summarized restaurant information.
         metadata (list of dict): A list of metadata dictionaries corresponding to each document.
-        collection (chromadb.Collection): The ChromaDB collection where the chunks and metadata will be stored.
+        collection (chromadb.Collection): The ChromaDB collection where the documents and metadata will be stored.
     """
     
-    text_splitter = RecursiveCharacterTextSplitter(
-        chunk_size = 500,
-        chunk_overlap = 20,
-        length_function = len,
-    )
     if len(documents) != len(metadata):
         print("ERROR: doc length does not equal metadata length")
         return
-    j = 0
 
-    print('Chunking Documents')
+    print('Adding data to DB')
     for i in range(len(documents)):
         document = documents[i]
-        chunks = text_splitter.split_text(document)
-        for chunk in chunks:
-            collection.add(documents=[chunk], metadatas=[metadata[i]], ids=[str(j)])
-            j += 1
+        collection.add(documents=[document], metadatas=[metadata[i]], ids=[str(i)])
 
 if __name__ == "__main__":
 
