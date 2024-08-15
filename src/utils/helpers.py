@@ -10,6 +10,11 @@ def get_openai_key(path):
             OPEN_AI_API_KEY = config['OPEN_AI_API_KEY']
     return OPEN_AI_API_KEY
 
+def get_tavily_key(path):
+    with open(path, 'r') as file:
+            config = json.load(file)
+            TAVILY_API_KEY = config['TAVILY_API_KEY']
+    return TAVILY_API_KEY
 
 def chromadb_init(path):
     # Initialize ChromaDB client

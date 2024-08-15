@@ -37,7 +37,7 @@ def chromadb_init():
                                         model="text-embedding-3-small")
     
     # Create or connect to a persistent ChromaDB client
-    client = chromadb.PersistentClient(path="src/chroma_db")
+    client = chromadb.PersistentClient(path="chroma_db")
 
     # Get or create a collection for restaurant data, using cosine similarity for embedding
     collection = client.get_or_create_collection(name="restaurant_collection_large", 
