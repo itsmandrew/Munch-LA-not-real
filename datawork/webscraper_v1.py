@@ -1,3 +1,5 @@
+# pylint: disable=E0401
+
 """
 This module provides functions to interact with the Google Places API,
 allowing for the retrieval of nearby places and detailed information about specific places.
