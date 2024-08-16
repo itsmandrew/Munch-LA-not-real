@@ -5,6 +5,7 @@
 This module implements a chatbot using LangChain tools and OpenAI's GPT model.
 It initializes a retriever tool and a TavilySearchResults instance, constructs a ReAct agent,
 and provides a loop for user interaction.
+THIS IS STILL A WIP !!!
 """
 
 from langchain_openai import ChatOpenAI
