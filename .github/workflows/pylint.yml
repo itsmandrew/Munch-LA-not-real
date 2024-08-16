@@ -1,0 +1,30 @@
+name: Pylint
+
+on: [push]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: ["3.10"]
+    steps:
+      - uses: actions/checkout@v4
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v3
+        with:
+          python-version: ${{ matrix.python-version }}
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install pylint
+      - name: Analysing the code with pylint
+        run: |
+          pylint $(git ls-files '*.py') > pylint_report.txt || true
+          score=$(awk '/Your code has been rated at/ {print $7}' pylint_report.txt)
+          score=${score%/10}
+          echo "Pylint score: $score"
+          if (( $(echo "$score < 8.0" | bc -l) )); then
+            echo "Pylint score is below the acceptable threshold of 8.0"
+            exit 1
+          fi
