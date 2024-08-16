@@ -1,30 +1,32 @@
+# pylint: disable=E0401
+# pylint: disable=W0718
+# pylint: disable=C0103
+
+"""
+This module initializes and uses a ChromaDB client with OpenAI embeddings to provide
+restaurant recommendations based on user queries. It includes functionality to load
+configuration, process documents, and interact with the user.
+"""
+
+import json
 from langchain_chroma import Chroma
-from langchain_openai import OpenAIEmbeddings
-from langchain_openai import ChatOpenAI
+from langchain_openai import OpenAIEmbeddings, ChatOpenAI
 from langchain_core.output_parsers import StrOutputParser
 from langchain_core.runnables import RunnablePassthrough
 from langchain.prompts import PromptTemplate
-from langchain import hub
 import chromadb
-import json
-import getpass
 
-def chromadb_init():
-    # Initialize ChromaDB client
-    with open('config.json', 'r') as file:
-        config = json.load(file)
-        OPEN_AI_API_KEY = config['OPEN_AI_API_KEY']
-
+def chromadb_init(open_ai_key):
+    """
+    Initialize the ChromaDB client with embeddings and create or retrieve the restaurant collection.
     
-    embeddings_model = OpenAIEmbeddings(api_key=OPEN_AI_API_KEY,
-                                        model="text-embedding-3-small")
-    
+    Returns:
+        Chroma: The initialized Chroma client.
+    """
 
+    embeddings_model = OpenAIEmbeddings(api_key=open_ai_key, model="text-embedding-3-small")
     client = chromadb.PersistentClient(path="chroma_db")
 
-    collection = client.get_or_create_collection(name="restaurant_collection", 
-                                                metadata={"hnsw:space": "cosine"}) # l2 is the default)
-    
     langchain_chroma = Chroma(
         client=client,
         collection_name="restaurant_collection",
@@ -33,33 +35,36 @@ def chromadb_init():
 
     return langchain_chroma
 
-
 def format_docs(docs):
+    """
+    Format the list of documents into a string for display.
+    
+    Args:
+        docs (list): List of documents to format.
+    
+    Returns:
+        str: Formatted string of document content and metadata.
+    """
     res = ""
     for doc in docs:
         res += "Reviews: " + doc.page_content + "\n"
         res += "Metadata: " + json.dumps(doc.metadata, indent=4) + "\n"
         res += "\n\n"
-         
 
     return res
 
-
 if __name__ == "__main__":
-
-
-     # Getting OpenAI API Key
-    with open('config.json', 'r') as file:
+    # Getting OpenAI API Key
+    file_path = "config.json"
+    with open(file_path, 'r', encoding='utf-8') as file:
         config = json.load(file)
-        OPEN_AI_API_KEY = config['OPEN_AI_API_KEY']
+        open_ai_api_key = config['OPEN_AI_API_KEY']
 
-    # Loading from ChromaDB directory ON DISK
-    langchain_chroma = chromadb_init()
+    # Loading from ChromaDB directory on disk
+    chroma_client = chromadb_init(open_ai_api_key)
+    retriever = chroma_client.as_retriever(search_kwargs={"k": 3})
 
-    retriever = langchain_chroma.as_retriever(search_kwargs={"k": 3})
-
-
-    llm = ChatOpenAI(api_key=OPEN_AI_API_KEY, model="gpt-4o-mini")
+    llm = ChatOpenAI(api_key=open_ai_api_key, model="gpt-4o-mini")
     prompt = PromptTemplate.from_template(
         template="""
         Guidelines:
@@ -85,27 +90,25 @@ if __name__ == "__main__":
 
         Helpful Answer:
         """.strip()
-)
+    )
 
     rag_chain = (
-    {"context": retriever | format_docs, "question": RunnablePassthrough()}
-    | prompt
-    | llm
-    | StrOutputParser()
+        {"context": retriever | format_docs, "question": RunnablePassthrough()}
+        | prompt
+        | llm
+        | StrOutputParser()
     )
 
     # While loop to continuously prompt for user input and generate responses
     while True:
         # Get user input
         user_input = input("Enter your question (or type 'exit' to quit): ")
-        
+
         # Exit condition
         if user_input.lower() == 'exit':
             break
-    
-        
+
         # Invoke the RAG chain with the formatted prompt
         response = rag_chain.invoke(user_input)
         # Print the response
         print(response)
-
