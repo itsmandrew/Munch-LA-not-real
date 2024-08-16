@@ -1,39 +1,35 @@
-# gen_db.py
-# Use this code to generate a vector database of summarized restaurant reviews
+# pylint: disable=[E0401, W0718, C0301, R0914]
+
+"""
+This module generates a vector database of restaurant information using ChromaDB.
+It processes restaurant data, summarizes reviews, and stores the information in a vector database.
+"""
 
 import json
-from openai import OpenAI
-import chromadb # type: ignore
-import chromadb.utils.embedding_functions as embedding_functions # type: ignore
-from langchain.text_splitter import RecursiveCharacterTextSplitter
+from typing import List, Dict, Tuple
+import chromadb
+from chromadb.utils import embedding_functions
 from langchain_openai import ChatOpenAI
 from langchain_core.prompts import PromptTemplate
 
-def documents_init(path):
+def documents_init(path: str) -> Tuple[List[str], List[Dict]]:
     """
     Generates summarized documents for each restaurant based on customer reviews.
 
-    This function reads a JSON file containing restaurant data, including customer reviews.
-    It then summarizes the reviews using an LLM (GPT-4Omini) and creates a text document for
-    each restaurant, containing the restaurant's name and the summarized review.
-
-    The function also prints progress updates and returns a list of summarized documents along 
-    with the original restaurant data.
+    Args:
+        path (str): Path to the JSON file containing restaurant data.
 
     Returns:
-        tuple: A tuple containing:
-            - documents (list of str): A list of summarized restaurant documents.
-            - restaurants (list of dict): The original list of restaurant data loaded from the JSON file.
+        Tuple[List[str], List[Dict]]: A tuple containing summarized documents and original restaurant data.
     """
+    # Load restaurant JSON data
+    with open(path, 'r', encoding='utf-8') as file:
+        restaurant_data = json.load(file)
 
-    # Load your restaurant JSON data
-    with open(path, 'r') as file:
-        restaurants = json.load(file)
-
-    # Get your API key
-    with open('src/config.json', 'r') as file:
+    # Get API key
+    with open('src/config.json', 'r', encoding='utf-8') as file:
         config = json.load(file)
-        OPEN_AI_API_KEY = config['OPEN_AI_API_KEY']
+        open_ai_api_key = config['OPEN_AI_API_KEY']
 
     # Template to summarize the reviews of the restaurant
     template = """
@@ -62,136 +58,102 @@ def documents_init(path):
 
     # Create LLM chain
     prompt = PromptTemplate.from_template(template)
-    llm = ChatOpenAI(api_key=OPEN_AI_API_KEY, model="gpt-4o-mini")
+    llm = ChatOpenAI(api_key=open_ai_api_key, model="gpt-4o-mini")
     llm_chain = prompt | llm
-    documents = []
+    summarized_documents = []
 
     # Create docs for every restaurant with summarized reviews
     print('Creating documents with reviews summarized')
-    for index, restaurant in enumerate(restaurants):
+    for index, restaurant in enumerate(restaurant_data):
         name = restaurant['name']
         price = restaurant['price_level']
         keywords = ', '.join(restaurant['keywords'])
-        doc = ''
         rev = f"Reviews for {name}: \n"
 
-        
         for review in restaurant['reviews']:
             review = review.replace('\n\n', '').replace('\n', '')
             review = review.replace('.', '.\n')
-            review += '\n\n'
-            rev += review
+            rev += f"{review}\n\n"
 
-        rev_summary = llm_chain.invoke({'reviews': rev, 'price': price, 'keywords': keywords}).content
-        doc += rev_summary
-        documents.append(doc)
+        rev_summary = llm_chain.invoke({'reviews': rev, 'price': price,
+                                        'keywords': keywords}).content
+        summarized_documents.append(rev_summary)
         print(f'Summarized Doc #{index}')
-    
+
     print('All docs generated \n')
-    print(f'Example first document: \n{documents[0]}')
+    print(f'Example first document: \n{summarized_documents[0]}')
 
-    return documents, restaurants
+    return summarized_documents, restaurant_data
 
-
-def chromadb_init():
+def chromadb_init() -> Tuple[chromadb.PersistentClient, chromadb.Collection]:
     """
     Initializes a ChromaDB vector database and returns the client and collection.
 
-    This function sets up a connection to a ChromaDB database for storing restaurant 
-    data embeddings. It retrieves the OpenAI API key from a configuration file and 
-    sets up an embedding function using the 'text-embedding-3-small' model. The 
-    database is initialized with cosine similarity as the distance metric.
-
     Returns:
-        tuple: A tuple containing:
-            - client (chromadb.PersistentClient): The ChromaDB client.
-            - collection (chromadb.Collection): The initialized collection in the database.
+        Tuple[chromadb.PersistentClient, chromadb.Collection]: The ChromaDB client and collection.
     """
-
     # Get API key
-    with open('src/config.json', 'r') as file:
+    with open('src/config.json', 'r', encoding='utf-8') as file:
         config = json.load(file)
-        OPEN_AI_API_KEY = config['OPEN_AI_API_KEY']
+        open_ai_api_key = config['OPEN_AI_API_KEY']
 
     # Set embedding function
     openai_ef = embedding_functions.OpenAIEmbeddingFunction(
-            api_key=OPEN_AI_API_KEY,
+            api_key=open_ai_api_key,
             model_name="text-embedding-3-small"
         )
-    
+
     # Create DB
     client = chromadb.PersistentClient(path="src/chroma_db")
-    collection = client.get_or_create_collection(name="restaurant_collection_large", 
-                                                        embedding_function=openai_ef, 
-                                                        metadata={"hnsw:space": "cosine"}) # l2 is the default)
-    
-    return client, collection
+    db_collection = client.get_or_create_collection(name="restaurant_collection_large",
+                                            embedding_function=openai_ef,
+                                            metadata={"hnsw:space": "cosine"}) # l2 is the default)
 
+    return client, db_collection
 
-def format_restaurant_data(restaurants):
+def format_restaurant_data(restaurant_data: List[Dict]) -> List[Dict]:
     """
     Formats restaurant data extracted from a JSON file.
 
-    This function takes a list of dictionaries, where each dictionary represents
-    a restaurant's information, and extracts specific fields ('place_id', 'name', 
-    'address', and 'rating'). It returns a list of dictionaries containing only these 
-    fields for each restaurant.
-
     Args:
-        restaurants (list of dict): A list of dictionaries where each dictionary
-            contains information about a restaurant. This data is typically read
-            from a JSON file.
+        restaurant_data (List[Dict]): A list of dictionaries containing restaurant information.
 
     Returns:
-        list of dict: A list of dictionaries, each containing the 'place_id',
-            'name', 'address', and 'rating' of a restaurant.
+        List[Dict]: A list of formatted dictionaries with selected restaurant information.
     """
+    return [{
+        "place_id": restaurant['place_id'],
+        "name": restaurant['name'],
+        "address": restaurant['address'],
+        "rating": restaurant['rating'],
+    } for restaurant in restaurant_data]
 
-    formatted_data = []
-    for restaurant in restaurants:
-        formatted_data.append({
-            "place_id": restaurant['place_id'],
-            "name": restaurant['name'],
-            "address": restaurant['address'],
-            "rating": restaurant['rating'],
-        })
-    return formatted_data
-
-# 
-def split_documents_and_add_to_collection(documents, metadata, collection):
+def split_documents_and_add_to_collection(docs: List[str], meta: List[Dict], db_collection: chromadb.Collection) -> None:
     """
     Adds documents and their corresponding metadata to a ChromaDB collection.
 
-    This function directly adds each document and its associated metadata to the
-    specified ChromaDB collection. It first checks that the number of documents matches 
-    the number of metadata entries. If they do not match, the function prints an error 
-    message and returns without adding any data.
-
     Args:
-        documents (list of str): A list of documents containing summarized restaurant information.
-        metadata (list of dict): A list of metadata dictionaries corresponding to each document.
-        collection (chromadb.Collection): The ChromaDB collection where the documents and metadata will be stored.
+        docs (List[str]): A list of documents containing summarized restaurant information.
+        meta (List[Dict]): A list of metadata dictionaries corresponding to each document.
+        db_collection (chromadb.Collection): The ChromaDB collection for storing documents and metadata.
     """
-    
-    if len(documents) != len(metadata):
+    if len(docs) != len(meta):
         print("ERROR: doc length does not equal metadata length")
         return
 
     print('Adding data to DB')
-    for i in range(len(documents)):
-        document = documents[i]
-        collection.add(documents=[document], metadatas=[metadata[i]], ids=[str(i)])
+    for i, (document, metadata) in enumerate(zip(docs, meta)):
+        db_collection.add(documents=[document], metadatas=[metadata], ids=[str(i)])
 
 if __name__ == "__main__":
-
     # Creating documents for vector store + metadata
-    documents, restaurants = documents_init('test_data/medium-meh/restaurants_with_reviews.json')
-    metadata = format_restaurant_data(restaurants)
-    
-    # Initialize client
-    chroma_client, collection = chromadb_init()
-    
-    # Add data to database
-    split_documents_and_add_to_collection(documents, metadata, collection)
+    summarized_docs, restaurants_data = documents_init('test_data/medium-meh/restaurants_with_reviews.json')
+    formatted_metadata = format_restaurant_data(restaurants_data)
 
-    print('Data is is now in DB')
+    # Initialize client
+    chroma_client, chroma_collection = chromadb_init()
+
+    # Add data to database
+    split_documents_and_add_to_collection(summarized_docs, formatted_metadata, chroma_collection)
+
+    print('Data is now in DB')
