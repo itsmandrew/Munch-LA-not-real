@@ -6,3 +6,8 @@ api = NinjaAPI()
 def hello(request):
     print(request)
     return "Hello World"
+
+@api.get('/sup')
+def hello(request, query):
+    print(query)
+    return "Sup"
