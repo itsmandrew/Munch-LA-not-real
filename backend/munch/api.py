@@ -20,17 +20,17 @@ from ninja import NinjaAPI
 
 api = NinjaAPI()
 
-with open('/Users/haroldmo/Documents/Projects/Los-Angeles-Eatz/backend/config.json', 'r') as file:
+with open('/Users/andrewchang/Workspace/HELP-IM-HUNGRY/src/config.json', 'r') as file:
     config = json.load(file)
     OPEN_AI_API_KEY = config['OPEN_AI_API_KEY']
 
 def chromadb_init():
-    with open('/Users/haroldmo/Documents/Projects/Los-Angeles-Eatz/backend/config.json', 'r') as file:
+    with open('/Users/andrewchang/Workspace/HELP-IM-HUNGRY/src/config.json', 'r') as file:
         config = json.load(file)
         OPEN_AI_API_KEY = config['OPEN_AI_API_KEY']
 
     embeddings_model = OpenAIEmbeddings(api_key=OPEN_AI_API_KEY, model="text-embedding-3-small")
-    client = chromadb.PersistentClient(path="/Users/haroldmo/Documents/Projects/Los-Angeles-Eatz/src/chroma_db")
+    client = chromadb.PersistentClient(path="/Users/andrewchang/Workspace/HELP-IM-HUNGRY/chroma_db")
     collection = client.get_or_create_collection(name="restaurant_collection_large", metadata={"hnsw:space": "cosine"})
 
     print(f'Number of instances in DB: {collection.count()} \n')
