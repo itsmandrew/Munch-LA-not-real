@@ -6,15 +6,16 @@ import Box from '@mui/material/Box'
 import { Typography } from '@mui/material';
 import { postData } from '../api/api';
 import { Button } from '@mui/material'
+import { Shizuru } from 'next/font/google';
 
 // General style object for the buttons
 const buttonStyles = {
     width: '100%',
     height: 'auto', 
-    border: 'none',
-    backgroundColor: 'transparent', 
+    // border: 'none',
+    // backgroundColor: 'transparent', 
     color: 'rgba(0, 0, 0, 0.7)', 
-    borderRadius: '10px',
+    // borderRadius: '10px',
     '&:hover': {
       border: '1px solid rgba(0, 0, 0, 0.7)', 
       backgroundColor: 'rgba(0, 0, 0, 0.05)', 
@@ -28,7 +29,7 @@ const ChatPage = () => {
     const buttons = [];
     for (let i = 1; i <= 50; i++) {
         buttons.push(
-            <Button key={i} sx={buttonStyles}>
+            <Button key={i} sx={buttonStyles} variant='text' size='large'>
                 Convo {i}
             </Button>
         );

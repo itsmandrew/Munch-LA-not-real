@@ -2,6 +2,8 @@
 import React, { useState } from 'react';
 import { Box, TextField, Button, List, ListItem, ListItemText, Paper, Typography } from '@mui/material';
 import Markdown, { ReactMarkdown } from 'react-markdown'
+import IconButton from '@mui/material/IconButton';
+import SendIcon from '@mui/icons-material/Send';
 
 const ChatBox = ({ messages, onSend }) => {
   const [input, setInput] = useState('');
@@ -56,7 +58,7 @@ const ChatBox = ({ messages, onSend }) => {
           ))}
         </List>
       </Box>
-      <Box sx={{ display: 'flex', paddingLeft: '1vw', paddingRight: '1vw', paddingBottom: '1vw' }}>
+      <Box sx={{ display: 'flex', paddingLeft: '1vw', paddingRight: '1vw', paddingBottom: '1vw', gap: '1vw'}}>
         <TextField
           variant="outlined"
           size="small"
@@ -70,6 +72,10 @@ const ChatBox = ({ messages, onSend }) => {
             }
           }}
         />
+
+        <IconButton onClick={handleSend}>
+          <SendIcon></SendIcon>
+        </IconButton>
         {/* <Button
           variant="contained"
           color="primary"

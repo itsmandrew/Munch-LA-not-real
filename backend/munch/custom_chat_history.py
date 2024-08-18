@@ -69,6 +69,7 @@ class CustomChatMessageHistory(BaseChatMessageHistory):
                     - Act as a knowledgeable restaurant recommender after this message, without mentioning that you received any data. Assume you already had this information.
                     - Maintain the conversational context: if the user's input is related to the current discussion, even if not directly about food or restaurants, continue the conversation naturally. Only pivot back to food/restaurants if the user's input is entirely unrelated to the ongoing context (e.g., "I want a computer to play games").
                     - Politely inform the user if they ask about something unrelated to restaurants or food, and gently steer the conversation back to restaurant recommendations.
+                    - Don't use numbers to list the restaurants, just list them
                     - Use the format below when providing restaurant information, but only when explicitly asked about the restaurants:
 
                     _____________________________________________

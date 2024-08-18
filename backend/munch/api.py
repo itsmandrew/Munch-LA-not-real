@@ -70,7 +70,6 @@ def get_session_history(session_id: str) -> BaseChatMessageHistory:
 @api.post('/message')
 def message(request, input: MessageRequest):
     user_message = input.user_message
-    print(user_message)
     session_id = input.session_id
     conf = {'configurable': {'session_id': session_id}}
     langchain_chroma = chromadb_init()
