@@ -3,7 +3,7 @@ import ChatPage from "./components/chat_page";
 
 export default function Home() {
   return (
-    <div className="App" style={{ height: '100vh', width: '100vw' }}>
+    <div className="App" style={{ height: "100vh", width: "100vw" }}>
       <ChatPage></ChatPage>
     </div>
   );
