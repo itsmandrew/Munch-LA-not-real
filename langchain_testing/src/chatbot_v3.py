@@ -8,20 +8,21 @@ and provides a loop for user interaction.
 THIS IS STILL A WIP !!!
 """
 
+import os
 from langchain_openai import ChatOpenAI
 from langchain_community.tools.tavily_search import TavilySearchResults
 from langchain.tools.retriever import create_retriever_tool
 from langchain.agents import AgentExecutor, create_react_agent
 from langchain import hub
-from utils.helpers import get_openai_key, chromadb_init
+from utils.helpers import chromadb_init
 
 def main():
     """
     Main function to run the chatbot application. It initializes necessary tools,
     constructs the ReAct agent, and enters a loop to handle user input.
     """
-    api_key = get_openai_key('src/config.json')
-    langchain_chroma = chromadb_init('src/config.json')
+    api_key = os.getenv('OPENAI_API_KEY')
+    langchain_chroma = chromadb_init(api_key)
 
     retriever = langchain_chroma.as_retriever(search_kwargs={"k": 5})
     search = TavilySearchResults(
