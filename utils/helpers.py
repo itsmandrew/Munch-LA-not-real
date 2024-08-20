@@ -86,3 +86,22 @@ def chromadb_init(path: str) -> Chroma:
     )
 
     return langchain_chroma
+
+def generate_prompt(context, question):
+    return f"""
+        Context and metadata:
+        {context}
+
+        User Query: {question}
+        """.strip()
+
+def format_docs(docs):
+    res = ""
+    for doc in docs:
+        res += f"Name: {doc.metadata['name']} \n"
+        res += f"Address: {doc.metadata['address']} \n"
+        res += f"Rating: {doc.metadata['rating']} \n"
+        res += f"Review/About: {doc.page_content} \n"
+        res += "\n\n"
+         
+    return res
