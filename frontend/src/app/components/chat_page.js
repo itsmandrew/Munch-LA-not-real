@@ -7,6 +7,7 @@ import { Typography } from '@mui/material';
 import { postData } from '../api/api';
 import { Button } from '@mui/material'
 import { Shizuru } from 'next/font/google';
+import Sidebar from './Sidebar';
 
 // General style object for the buttons
 const buttonStyles = {
@@ -62,20 +63,63 @@ const ChatPage = () => {
     return (
         <Box sx={{ height: '100%', width: '100%' }}>
             <Grid container sx={{ height: '100%' }}>
-                <Grid item xs={12} md={2} sx={{ backgroundColor: '#d3d3d3', padding: '8px', maxHeight: '100%'}}>
-                    <Box sx={{display: 'flex', flexDirection: 'column', overflowY: 'auto', height: '100%'}}>
+                <Grid item xs={12} md={2} sx={{ padding: '8px', maxHeight: '100%'}}>
+                    <Sidebar></Sidebar>
+                    {/* <Box sx={{display: 'flex', flexDirection: 'column', overflowY: 'auto', height: '100%'}}>
                         {buttons}
-                    </Box>
+                    </Box> */}
+
+
+                    {/* make this into its own component and import it into here */}
+                    {/* put sidebar.js here */}
+                    {/* this is harolds sidebar */}
+                    {/* combine Navbar and Sidebar into one component which is NavSidebar and then import it here */}
                 </Grid>
+
 
                 <Grid item xs={12} md={10} sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100%'}}>
                     <div style={{ height: '100%', width: '100%', backgroundColor: '#ffffff' }}>
                         <ChatBox messages={messages} onSend={onSend} />
+                        {/* add a switch statement here that switches to chat_intro */}
+                        {/* if messages array is empty then render <ChatIntro></ChatIntro>
+                        else render <ChatBox messages={messages} onSend={onSend} /> */}
+                        {/* if first chat sent then render <ChatBox messages={messages} onSend={onSend} />
+                        else render <ChatIntro></ChatIntro>*/}
                     </div>
+                    {/* messaging chat area */}
+                    
                 </Grid>
             </Grid>
         </Box>
     );
+//     return (
+//         <Box sx={{ height: '100%', width: '100%' }}>
+//             <Grid container sx={{ height: '100%' }}>
+//                 <Grid item xs={2} md={2} sx={{ backgroundColor: '#d3d3d3', padding: '8px', maxHeight: '100%'}}>
+
+//                     <Grid container direction='column'>
+//                         <Grid item xs={2} md={2}>
+//                             <Typography sx={{textAlign: 'center'}}>
+//                                 NAVBAR
+//                             </Typography>
+//                         </Grid>
+//                         <Grid item xs={10} md={10}> 
+//                             <Box sx={{display: 'flex', flexDirection: 'column', overflowY: 'auto', height: '100%'}}>
+//                                 {buttons}
+//                                 {/* chat buttons */}
+//                             </Box>
+//                         </Grid>
+//                     </Grid>
+//                 </Grid>
+
+//                 <Grid item xs={10} md={10} sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100%'}}>
+//                     <div style={{ height: '100%', width: '100%', backgroundColor: '#ffffff' }}>
+//                         <ChatBox messages={messages} onSend={onSend} />
+//                     </div>
+//                 </Grid>
+//             </Grid>
+//         </Box>
+//     );
 };
 
 export default ChatPage;
