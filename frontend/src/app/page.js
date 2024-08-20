@@ -6,7 +6,6 @@ export default function Home() {
   return (
     <div className="App" style={{ height: "100vh", width: "100vw" }}>
       <ChatPage></ChatPage>
-      {/* <ChatIntro></ChatIntro> */}
     </div>
   );
 }

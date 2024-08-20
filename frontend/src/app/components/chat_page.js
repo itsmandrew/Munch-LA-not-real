@@ -92,34 +92,6 @@ const ChatPage = () => {
             </Grid>
         </Box>
     );
-//     return (
-//         <Box sx={{ height: '100%', width: '100%' }}>
-//             <Grid container sx={{ height: '100%' }}>
-//                 <Grid item xs={2} md={2} sx={{ backgroundColor: '#d3d3d3', padding: '8px', maxHeight: '100%'}}>
-
-//                     <Grid container direction='column'>
-//                         <Grid item xs={2} md={2}>
-//                             <Typography sx={{textAlign: 'center'}}>
-//                                 NAVBAR
-//                             </Typography>
-//                         </Grid>
-//                         <Grid item xs={10} md={10}> 
-//                             <Box sx={{display: 'flex', flexDirection: 'column', overflowY: 'auto', height: '100%'}}>
-//                                 {buttons}
-//                                 {/* chat buttons */}
-//                             </Box>
-//                         </Grid>
-//                     </Grid>
-//                 </Grid>
-
-//                 <Grid item xs={10} md={10} sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100%'}}>
-//                     <div style={{ height: '100%', width: '100%', backgroundColor: '#ffffff' }}>
-//                         <ChatBox messages={messages} onSend={onSend} />
-//                     </div>
-//                 </Grid>
-//             </Grid>
-//         </Box>
-//     );
 };
 
 export default ChatPage;
