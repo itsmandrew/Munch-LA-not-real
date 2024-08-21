@@ -159,3 +159,5 @@ config.json
 chroma_db
 __pycache__
 db.sqlite3
+
+.env

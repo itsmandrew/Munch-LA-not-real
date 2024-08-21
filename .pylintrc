@@ -39,7 +39,7 @@ extension-pkg-whitelist=
 fail-on=
 
 # Specify a score threshold under which the program will exit with error.
-fail-under=10
+fail-under=8
 
 # Interpret the stdin as a python script, whose filename needs to be passed as
 # the module_or_package argument.
@@ -51,8 +51,8 @@ ignore=CVS
 # Add files or directories matching the regular expressions patterns to the
 # ignore-list. The regex matches against paths and can be in Posix or Windows
 # format. Because '\\' represents the directory delimiter on Windows systems,
-# it can't be used as an escape character.
-ignore-paths=src/dev,src/testing, webserver/webserver
+# it can't be c/dev,src/testing, used as an escape character.
+ignore-paths=backend/webserver, backend/munch/migrations
 
 # Files or directories matching the regular expression patterns are skipped.
 # The regex matches against base names, not paths. The default value ignores

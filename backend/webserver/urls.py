@@ -20,5 +20,5 @@ from .api import api
 
 urlpatterns = [
     path('admin/', admin.site.urls),
-    path('api/', api.urls)
+    path('', include('munch.urls')),
 ]
