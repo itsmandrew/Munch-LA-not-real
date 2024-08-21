@@ -8,63 +8,21 @@ restaurant recommendations based on user queries. It includes functionality to l
 configuration, process documents, and interact with the user.
 """
 
-import json
-from langchain_chroma import Chroma
-from langchain_openai import OpenAIEmbeddings, ChatOpenAI
+from langchain_openai import ChatOpenAI
 from langchain_core.output_parsers import StrOutputParser
 from langchain_core.runnables import RunnablePassthrough
 from langchain.prompts import PromptTemplate
-import chromadb
+from utils.helpers import chromadb_init, format_docs
+import os
 
-def chromadb_init(open_ai_key):
-    """
-    Initialize the ChromaDB client with embeddings and create or retrieve the restaurant collection.
-    
-    Returns:
-        Chroma: The initialized Chroma client.
-    """
-
-    embeddings_model = OpenAIEmbeddings(api_key=open_ai_key, model="text-embedding-3-small")
-    client = chromadb.PersistentClient(path="chroma_db")
-
-    langchain_chroma = Chroma(
-        client=client,
-        collection_name="restaurant_collection",
-        embedding_function=embeddings_model,
-    )
-
-    return langchain_chroma
-
-def format_docs(docs):
-    """
-    Format the list of documents into a string for display.
-    
-    Args:
-        docs (list): List of documents to format.
-    
-    Returns:
-        str: Formatted string of document content and metadata.
-    """
-    res = ""
-    for doc in docs:
-        res += "Reviews: " + doc.page_content + "\n"
-        res += "Metadata: " + json.dumps(doc.metadata, indent=4) + "\n"
-        res += "\n\n"
-
-    return res
+OPEN_AI_API_KEY = os.getenv('OPENAI_API_KEY')
 
 if __name__ == "__main__":
-    # Getting OpenAI API Key
-    file_path = "config.json"
-    with open(file_path, 'r', encoding='utf-8') as file:
-        config = json.load(file)
-        open_ai_api_key = config['OPEN_AI_API_KEY']
-
     # Loading from ChromaDB directory on disk
-    chroma_client = chromadb_init(open_ai_api_key)
+    chroma_client = chromadb_init(OPEN_AI_API_KEY)
     retriever = chroma_client.as_retriever(search_kwargs={"k": 3})
 
-    llm = ChatOpenAI(api_key=open_ai_api_key, model="gpt-4o-mini")
+    llm = ChatOpenAI(api_key=OPEN_AI_API_KEY, model="gpt-4o-mini")
     prompt = PromptTemplate.from_template(
         template="""
         Guidelines:

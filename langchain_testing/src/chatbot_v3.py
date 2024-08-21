@@ -21,14 +21,19 @@ def main():
     Main function to run the chatbot application. It initializes necessary tools,
     constructs the ReAct agent, and enters a loop to handle user input.
     """
+    # Fetch API key from environment variables
     api_key = os.getenv('OPENAI_API_KEY')
+    if not api_key:
+        raise ValueError("OPENAI_API_KEY environment variable is not set.")
+
+    # Initialize ChromaDB client and create a retriever tool
     langchain_chroma = chromadb_init(api_key)
-
     retriever = langchain_chroma.as_retriever(search_kwargs={"k": 5})
-    search = TavilySearchResults(
-        max_results=1,
-    )
 
+    # Initialize TavilySearchResults tool for additional search functionality
+    search = TavilySearchResults(max_results=1)
+
+    # Create retriever tool with a specific description for restaurant reviews
     retriever_tool = create_retriever_tool(
         retriever,
         "reviews_search",
@@ -38,18 +43,19 @@ def main():
 
     tools = [search, retriever_tool]
 
+    # Initialize the language model
     llm = ChatOpenAI(api_key=api_key, model="gpt-4o-mini")
 
-    # Get the prompt to use - you can modify this!
+    # Pull a predefined prompt template from the LangChain hub
     prompt = hub.pull("hwchase17/react")
 
-    # Construct the ReAct agent
+    # Construct the ReAct agent using the LLM and the initialized tools
     agent = create_react_agent(llm, tools, prompt)
     agent_executor = AgentExecutor(agent=agent, tools=tools, verbose=True)
 
     # Main loop for user interaction
     while True:
-        user_input = input("Enter your question (or 'exit' to quit): ")
+        user_input = input("Enter your question (or 'exit' to quit): ").strip()
 
         if user_input.lower() == 'exit':
             print("Goodbye!")
