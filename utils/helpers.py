@@ -3,6 +3,7 @@
 # pylint: disable=E0401
 # pylint: disable=W0718
 # pylint: disable=C0103
+# pylint: disable=R0914
 
 """
 This module provides utility functions for interacting with 
@@ -14,19 +15,18 @@ Functions:
 - format_docs: Formats documents with restaurant metadata and reviews.
 - documents_init: Summarizes restaurant data and returns the summarized documents and original data.
 - format_restaurant_data: Extracts and formats specific restaurant information.
-- split_documents_and_add_to_collection: Splits and adds documents and metadata to a ChromaDB collection.
+- split_documents_and_add_to_collection: Splits and adds documents and metadata 
+  to a ChromaDB collection.
 """
 
 
 import json
-from langchain_openai import OpenAIEmbeddings
+import os
+from typing import List, Dict, Tuple
 import chromadb
 from langchain_chroma import Chroma
-import json
-from typing import List, Dict, Tuple
-from langchain_openai import ChatOpenAI
+from langchain_openai import ChatOpenAI, OpenAIEmbeddings
 from langchain_core.prompts import PromptTemplate
-import os
 
 OPEN_AI_API_KEY = os.getenv('OPENAI_API_KEY')
 
@@ -65,6 +65,7 @@ def chromadb_init(api_key: str) -> Chroma:
     return langchain_chroma
 
 def generate_prompt(context, question):
+    """Will add this in the future lol"""
     return f"""
         Context and metadata:
         {context}
@@ -73,6 +74,7 @@ def generate_prompt(context, question):
         """.strip()
 
 def format_docs(docs):
+    """Will add this in the future lol"""
     res = ""
     for doc in docs:
         res += f"Name: {doc.metadata['name']} \n"
@@ -80,7 +82,7 @@ def format_docs(docs):
         res += f"Rating: {doc.metadata['rating']} \n"
         res += f"Review/About: {doc.page_content} \n"
         res += "\n\n"
-         
+
     return res
 
 def documents_init(path: str) -> Tuple[List[str], List[Dict]]:
@@ -91,7 +93,8 @@ def documents_init(path: str) -> Tuple[List[str], List[Dict]]:
         path (str): Path to the JSON file containing restaurant data.
 
     Returns:
-        Tuple[List[str], List[Dict]]: A tuple containing summarized documents and original restaurant data.
+        Tuple[List[str], List[Dict]]: A tuple containing summarized documents 
+        and original restaurant data.
     """
     # Load restaurant JSON data
     with open(path, 'r', encoding='utf-8') as file:
@@ -168,14 +171,16 @@ def format_restaurant_data(restaurant_data: List[Dict]) -> List[Dict]:
         "rating": restaurant['rating'],
     } for restaurant in restaurant_data]
 
-def split_documents_and_add_to_collection(docs: List[str], meta: List[Dict], db_collection: chromadb.Collection) -> None:
+def split_documents_and_add_to_collection(docs: List[str], meta: List[Dict],
+                                          db_collection: chromadb.Collection) -> None:
     """
     Adds documents and their corresponding metadata to a ChromaDB collection.
 
     Args:
         docs (List[str]): A list of documents containing summarized restaurant information.
         meta (List[Dict]): A list of metadata dictionaries corresponding to each document.
-        db_collection (chromadb.Collection): The ChromaDB collection for storing documents and metadata.
+        db_collection (chromadb.Collection): The ChromaDB collection for storing 
+            documents and metadata.
     """
     if len(docs) != len(meta):
         print("ERROR: doc length does not equal metadata length")

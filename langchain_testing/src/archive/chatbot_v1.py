@@ -8,12 +8,12 @@ restaurant recommendations based on user queries. It includes functionality to l
 configuration, process documents, and interact with the user.
 """
 
+import os
 from langchain_openai import ChatOpenAI
 from langchain_core.output_parsers import StrOutputParser
 from langchain_core.runnables import RunnablePassthrough
 from langchain.prompts import PromptTemplate
 from utils.helpers import chromadb_init, format_docs
-import os
 
 OPEN_AI_API_KEY = os.getenv('OPENAI_API_KEY')
 
