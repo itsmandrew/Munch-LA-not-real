@@ -27,10 +27,10 @@ def main():
     formatted_metadata = format_restaurant_data(restaurants_data)
 
     # Initialize client and collection
-    chroma_collection = chromadb_init(api_key=OPEN_AI_API_KEY)
+    chroma = chromadb_init(api_key=OPEN_AI_API_KEY)
 
     # Add data to the database
-    split_documents_and_add_to_collection(summarized_docs, formatted_metadata, chroma_collection)
+    split_documents_and_add_to_collection(summarized_docs, formatted_metadata, chroma)
 
     print('Data is now in DB')
 
