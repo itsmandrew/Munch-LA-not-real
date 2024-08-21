@@ -1,3 +1,6 @@
+# pylint: disable=E0401
+# pylint: disable=W0718
+
 from ninja import Schema
 
 class MessageRequest(Schema):

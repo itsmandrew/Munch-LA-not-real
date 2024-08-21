@@ -1,14 +1,16 @@
-import django
+# pylint: disable=E0401
+# pylint: disable=W0718
+"""Custom class for chats and message history"""
+
 import os
+import django
+from langchain_core.messages import HumanMessage, AIMessage
+from langchain_core.chat_history import BaseChatMessageHistory
+from .models import Message
 
 # Set up Django environment
 os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'webserver.settings')
 django.setup()
-
-# Other imports
-from langchain_core.messages import HumanMessage, AIMessage
-from langchain_core.chat_history import BaseChatMessageHistory
-from .models import Message
 
 class CustomChatMessageHistory(BaseChatMessageHistory):
     """

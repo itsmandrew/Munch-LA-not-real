@@ -1,3 +1,6 @@
+# pylint: disable=E0401
+# pylint: disable=W0718
+
 from django.apps import AppConfig
 
 
