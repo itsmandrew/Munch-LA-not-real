@@ -1,3 +1,6 @@
+"""Migrating data models lol"""
+# pylint: disable=E0401
+# pylint: disable=W0718
 from django.contrib import admin
 from .models import Message
 
