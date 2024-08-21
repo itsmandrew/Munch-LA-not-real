@@ -172,7 +172,7 @@ def format_restaurant_data(restaurant_data: List[Dict]) -> List[Dict]:
     } for restaurant in restaurant_data]
 
 def split_documents_and_add_to_collection(docs: List[str], meta: List[Dict],
-                                          db_collection: chromadb.Collection) -> None:
+                                          chroma: Chroma) -> None:
     """
     Adds documents and their corresponding metadata to a ChromaDB collection.
 
@@ -188,4 +188,4 @@ def split_documents_and_add_to_collection(docs: List[str], meta: List[Dict],
 
     print('Adding data to DB')
     for i, (document, metadata) in enumerate(zip(docs, meta)):
-        db_collection.add(documents=[document], metadatas=[metadata], ids=[str(i)])
+        chroma.add_texts(texts=[document], metadatas=[metadata], ids=[str(i)])
