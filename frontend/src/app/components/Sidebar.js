@@ -13,6 +13,7 @@ const Sidebar = () => {
     setIsOpen(!isOpen);
   };
 
+  // Gives conversation name when press new chat button
   const handleNewChat = () => {
     const newConversation = `Conversation ${conversations.length + 1}`;
     setConversations([...conversations, newConversation]);

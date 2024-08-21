@@ -1,12 +1,9 @@
 'use client';
 import React, { useState, useEffect } from 'react';
-import ChatBox from './chatbot';
-import Grid from '@mui/material/Grid';
-import Box from '@mui/material/Box'
-import { Typography } from '@mui/material';
+import { Box, Grid, Button, Typography } from '@mui/material';
 import { postData } from '../api/api';
-import { Button } from '@mui/material'
-import { Shizuru } from 'next/font/google';
+
+import ChatBox from './chatbot';
 import Sidebar from './Sidebar';
 
 // General style object for the buttons

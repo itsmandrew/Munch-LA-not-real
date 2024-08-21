@@ -27,9 +27,11 @@ const SidebarActions = ({ isOpen, toggleSidebar, handleNewChat }) => {
         MunchLA
       </Typography>
 
-      <IconButton onClick={handleNewChat} sx={{ color: 'white' }}>
-        <ChatIcon />
-      </IconButton>
+      {isOpen && (
+        <IconButton onClick={handleNewChat} sx={{ color: 'white' }}>
+          <ChatIcon />
+        </IconButton>
+      )}
     </Box>
   );
 };

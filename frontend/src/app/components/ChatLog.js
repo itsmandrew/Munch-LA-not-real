@@ -1,24 +1,33 @@
 // ChatLog.js
-'use client';
-
 import React from 'react';
 import { List, ListItem, ListItemText } from '@mui/material';
 
 const ChatLog = ({ isOpen, conversations }) => {
   return (
-    <List sx={{ flexGrow: 1, overflowY: 'auto', paddingTop: 0 }}>
+    <List
+      sx={{
+        flexGrow: 1,
+        overflowY: isOpen ? 'auto' : 'hidden',
+        paddingTop: 0,
+        visibility: isOpen ? 'visible' : 'hidden',
+      }}
+    >
       {conversations.map((conversation, index) => (
         <ListItem
           button
           key={index}
           sx={{
-            justifyContent: isOpen ? 'initial' : 'center',
+            justifyContent: 'center', // Center the text horizontally
             paddingLeft: isOpen ? '16px' : '8px',
           }}
         >
           <ListItemText
             primary={conversation}
-            sx={{ opacity: isOpen ? 1 : 0, transition: 'opacity 0.3s ease' }}
+            sx={{
+              textAlign: 'center', // Center the text within the ListItemText component
+              opacity: isOpen ? 1 : 0,
+              transition: 'opacity 0.3s ease',
+            }}
           />
         </ListItem>
       ))}
