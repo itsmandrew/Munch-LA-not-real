@@ -6,7 +6,7 @@ A chatbot designed to help users find food options in the Los Angeles area. This
 
 - [Installation](#installation)
 - [Usage](#usage)
-- [Architecture](#features)
+- [Architecture](#architecture)
 
 ## Installation
 
@@ -37,21 +37,58 @@ A chatbot designed to help users find food options in the Los Angeles area. This
    pip install -r requirements.txt
    ```
 
-4. Setup API keys for the following:
+4. Set up API keys in a `.env` file in the base directory with the following content:
 
-- OpenAI for model use and embeddings
-- Google Cloud Platform (enable Places API) only for webscraper
+   ```bash
+   OPENAI_API_KEY=your_openai_api_key
+   PYTHONPATH=/path/to/your/project
+   ```
+
+5. Load the environment variables by running the following command in each new terminal session:
+
+   ```bash
+   source ./load_env.sh
+   ```
+
+6. Populate your ChromaDB database by running:
+
+   ```bash
+   python langchain_testing/src/generate_db.py
+   ```
+
+   This will store the restaurant data in your ChromaDB for querying.
 
 ## Usage
 
-Basic use to start the chatbot and run the program.
+To start the backend and frontend (run each step in separate terminals):
 
-1. Run the main script:
+1. Launch the backend server:
 
    ```bash
-   python src/chatbot.py
+   python backend/manage.py runserver
    ```
 
-## Architecture
+2. Launch the frontend:
 
-TBD - Work in Progress
+   ```bash
+   cd frontend
+   npm install  # Only needed the first time
+   npm run dev
+   ```
+
+## Tech Stack
+
+**Backend:**
+- LangChain
+- OPENAI GPT-4o mini
+- ChromaDB
+- OPENAI text-embedding-3-small
+- Django
+- SQLite3
+
+**Frontend:**
+- Next.js
+- JavaScript
+- Material-UI
+- HTML
+- CSS
