@@ -6,7 +6,7 @@ A chatbot designed to help users find food options in the Los Angeles area. This
 
 - [Installation](#installation)
 - [Usage](#usage)
-- [Architecture](#architecture)
+- [Tech-Stack](#tech-stack)
 
 ## Installation
 
@@ -76,7 +76,7 @@ To start the backend and frontend (run each step in separate terminals):
    npm run dev
    ```
 
-## Tech Stack
+## Tech-Stack
 
 **Backend:**
 - LangChain
