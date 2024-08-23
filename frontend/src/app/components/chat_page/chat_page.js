@@ -1,10 +1,10 @@
 'use client';
 import React, { useState, useEffect } from 'react';
 import { Box, Grid, Button, Typography } from '@mui/material';
-import { postData } from '../api/api';
+import { postData } from '../../api/api';
 
-import ChatBox from './chatbot';
-import Sidebar from './Sidebar';
+import ChatBox from '../chatbot/chatbot';
+import Sidebar from '../sidebar/sidebar';
 
 // General style object for the buttons
 const buttonStyles = {
@@ -65,12 +65,6 @@ const ChatPage = () => {
                     {/* <Box sx={{display: 'flex', flexDirection: 'column', overflowY: 'auto', height: '100%'}}>
                         {buttons}
                     </Box> */}
-
-
-                    {/* make this into its own component and import it into here */}
-                    {/* put sidebar.js here */}
-                    {/* this is harolds sidebar */}
-                    {/* combine Navbar and Sidebar into one component which is NavSidebar and then import it here */}
                 </Grid>
 
 

@@ -2,9 +2,10 @@
 
 import React, { useState } from 'react';
 import { Box, Grid } from '@mui/material';
-import SidebarActions from './SidebarActions';
-import ChatLog from './ChatLog';
+import SidebarActions from './sidebar_action';
+import ChatLog from './chatlog/chat_log';
 
+// Sidebar component that contains the sidebar actions and chat log
 const Sidebar = () => {
   const [isOpen, setIsOpen] = useState(true);
   const [conversations, setConversations] = useState([]);

@@ -2,6 +2,7 @@
 import React from 'react';
 import { List, ListItem, ListItemText } from '@mui/material';
 
+// List of chat conversations in sidebar
 const ChatLog = ({ isOpen, conversations }) => {
   return (
     <List

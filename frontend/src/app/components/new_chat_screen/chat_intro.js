@@ -1,7 +1,7 @@
 import React from 'react';
 import { Box, Container, Typography, Grid, TextField, Button, Paper } from '@mui/material';
 
-const LandingPage = () => {
+const chat_intro = () => {
     return (
         <Container maxWidth="lg" style={{ marginTop: '30px', textAlign: 'center' }}>
             <Box display="flex" justifyContent="space-between" alignItems="center" mb={4}>
@@ -39,4 +39,4 @@ const LandingPage = () => {
     );
 };
 
-export default LandingPage;
+export default chat_intro;

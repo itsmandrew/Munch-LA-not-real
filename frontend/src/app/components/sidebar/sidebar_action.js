@@ -5,6 +5,7 @@ import MenuIcon from '@mui/icons-material/Menu';
 import CloseIcon from '@mui/icons-material/Close';
 import ChatIcon from '@mui/icons-material/Chat';
 
+// SidebarActions component that contains the toggle button and new chat button
 const SidebarActions = ({ isOpen, toggleSidebar, handleNewChat }) => {
   return (
     <Box
@@ -16,6 +17,7 @@ const SidebarActions = ({ isOpen, toggleSidebar, handleNewChat }) => {
         borderBottom: '1px solid #444',
       }}
     >
+      {/* Sidebar toggle button */}
       <IconButton onClick={toggleSidebar} sx={{ color: 'white' }}>
         {isOpen ? <CloseIcon /> : <MenuIcon />}
       </IconButton>
@@ -26,7 +28,8 @@ const SidebarActions = ({ isOpen, toggleSidebar, handleNewChat }) => {
       >
         MunchLA
       </Typography>
-
+      
+      {/* Add new chat button if the sidebar is open */}
       {isOpen && (
         <IconButton onClick={handleNewChat} sx={{ color: 'white' }}>
           <ChatIcon />
