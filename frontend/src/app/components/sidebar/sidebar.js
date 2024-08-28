@@ -10,44 +10,53 @@ const Sidebar = () => {
   const [isOpen, setIsOpen] = useState(true);
   const [conversations, setConversations] = useState([]);
 
+  // Function to toggle sidebar open or closed
   const toggleSidebar = () => {
-    setIsOpen(!isOpen);
+    setIsOpen(!isOpen); // Toggle value of isOpen between true and false when clicked
   };
 
-  // Gives conversation name when press new chat button
+  // Function to add new conversation when the "New Chat" button is pressed
   const handleNewChat = () => {
-    const newConversation = `Conversation ${conversations.length + 1}`;
-    setConversations([...conversations, newConversation]);
+    const newConversation = `Conversation ${conversations.length + 1}`; // Create new conversation name based on current number of convos
+    setConversations([...conversations, newConversation]); // Add the new conversation to the conversations array
+  };
+
+  // Function to delete conversation when delete button is pressed
+  const handleDeleteChat = (index) => {
+    const updatedConversations = conversations.filter((_, i) => i !== index); // Remove the conversation at the specified index
+    setConversations(updatedConversations); // Update the conversations array with the filtered list
   };
 
   return (
     <Box
       sx={{
-        display: 'flex',
-        flexDirection: 'column',
-        height: '100vh',
-        width: isOpen ? '15%' : '5%',
-        backgroundColor: '#333',
-        color: 'white',
-        transition: 'width 0.3s ease',
-        position: 'fixed',
-        top: 0,
-        left: 0,
-        zIndex: 2,
-        overflow: 'hidden',
+        display: 'flex',  // Flexbox layout to stack child elements vertically
+        flexDirection: 'column',  // Stack children vertically
+        height: '100vh',  // Make the sidebar take up the full height of the viewport
+        width: isOpen ? '15%' : '5%',  // Adjust the width based on whether the sidebar is open or collapsed
+        backgroundColor: '#333',  // Set the background color to dark gray
+        color: 'white',  // Set the text color to white
+        transition: 'width 0.3s ease',  // Smooth transition when changing the width
+        position: 'fixed',  // Fix the sidebar to the left side of the screen
+        top: 0,  // Align the sidebar with the top of the viewport
+        left: 0,  // Align the sidebar with the left edge of the viewport
+        zIndex: 2,  // Ensure the sidebar is above other elements
+        overflow: 'hidden',  // Hide any overflowing content
       }}
     >
       {/* SidebarActions contains the logo, collapse button, and new chat button */}
       <SidebarActions
-        isOpen={isOpen}
-        toggleSidebar={toggleSidebar}
-        handleNewChat={handleNewChat}
+        isOpen={isOpen} // Pass the isOpen state to control the appearance of the sidebar actions
+        toggleSidebar={toggleSidebar}  // Pass the toggleSidebar function to control collapsing/expanding
+        handleNewChat={handleNewChat}  // Pass the handleNewChat function to add new conversations
       />
 
       {/* ChatLog contains the list of conversations */}
       <ChatLog 
-        isOpen={isOpen} 
-        conversations={conversations} />
+        isOpen={isOpen} // Pass the isOpen state to control the visibility and layout of the chat log
+        conversations={conversations}  // Pass the conversations array to display the list of conversations
+        handleDeleteChat={handleDeleteChat}  // Pass the handleDeleteChat function to allow deleting conversations
+      />
     </Box>
   );
 };

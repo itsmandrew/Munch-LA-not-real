@@ -35,27 +35,26 @@ const ChatPage = () => {
 
     const onSend = async (input) => {
         if (input.trim()) {
-        const userMessage = { text: input.trim(), sender: 'user' };
-        const newMessages = [...messages, userMessage];
-        setMessages(newMessages);
+            const userMessage = { text: input.trim(), sender: 'user' };
+            const newMessages = [...messages, userMessage];
+            setMessages(newMessages);
 
-        try {
-            // Call postData with user_message and session_id
-            const response = await postData('message', { user_message: input, session_id: sessionId });
-            const systemMessage = { text: response.input, sender: 'system' };
+            try {
+                // Call postData with user_message and session_id
+                const response = await postData('message', { user_message: input, session_id: sessionId });
+                const systemMessage = { text: response.input, sender: 'system' };
 
-            // Update session ID if needed
-            // setSessionId(response.new_session_id); // Uncomment if session_id is updated
+                // Update session ID if needed
+                // setSessionId(response.new_session_id); // Uncomment if session_id is updated
 
-            // Add system message after receiving response
-            setMessages([...newMessages, systemMessage]);
-        } catch (error) {
-            console.error('Error posting data:', error);
-            // Optionally handle error (e.g., show error message)
-        }
+                // Add system message after receiving response
+                setMessages([...newMessages, systemMessage]);
+            } catch (error) {
+                console.error('Error posting data:', error);
+                // Optionally handle error (e.g., show error message)
+            }
         }
     };
-
 
     return (
         <Box sx={{ height: '100%', width: '100%' }}>
@@ -66,7 +65,6 @@ const ChatPage = () => {
                         {buttons}
                     </Box> */}
                 </Grid>
-
 
                 <Grid item xs={12} md={10} sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100%'}}>
                     <div style={{ height: '100%', width: '100%', backgroundColor: '#ffffff' }}>
