@@ -4,21 +4,23 @@ import { List, ListItem, ListItemText, IconButton, Box} from '@mui/material';
 import DeleteIcon from '@mui/icons-material/Delete';
 
 // List of chat conversations in sidebar
-const ChatLog = ({ isOpen, conversations, handleDeleteChat }) => {
+const ChatLog = ({ isOpen, conversations, handleDeleteChat, onSelectConversation }) => {
   return (
     // Render a list to display conversations
     <List
       sx={{
-        flexGrow: 1,                   // Make the list take up all available vertical space
+        flexGrow: 1,  // Make the list take up all available vertical space
         overflowY: isOpen ? 'auto' : 'hidden',  // Allow vertical scrolling if the sidebar is open; hide the scrollbar if collapsed
-        paddingTop: 0,                 // Remove any padding at the top of the list
+        paddingTop: 0,  // Remove any padding at the top of the list
         visibility: isOpen ? 'visible' : 'hidden',  // Hide the list if the sidebar is collapsed
       }}
     >
       {conversations.map((conversation, index) => (
         // Render each conversation as a list item
         <ListItem
+          button  // This makes the ListItem act as a button
           key={index}  // Unique key for each list item, based on its index
+          onClick={() => onSelectConversation(index)}  // Call onSelectConversation when clicked
           sx={{
             justifyContent: 'space-between',  // Distribute space between the conversation text and the delete button
             paddingLeft: isOpen ? '16px' : '8px',  // Adjust padding based on whether the sidebar is open or collapsed
@@ -45,7 +47,7 @@ const ChatLog = ({ isOpen, conversations, handleDeleteChat }) => {
             }}
           >
             {/* Delete button with trash icon */}
-            <IconButton onClick={() => handleDeleteChat(index)} sx={{ color: 'white' }}>
+            <IconButton onClick={(e) => { e.stopPropagation(); handleDeleteChat(index) }} sx={{ color: 'white' }}>
               <DeleteIcon />  {/* Trash can icon from Material-UI */}
             </IconButton>
           </Box>

@@ -6,7 +6,7 @@ import SidebarActions from './sidebar_action';
 import ChatLog from './chatlog/chat_log';
 
 // Sidebar component that contains the sidebar actions and chat log
-const Sidebar = () => {
+const Sidebar = ({ onSelectConversation }) => {
   const [isOpen, setIsOpen] = useState(true);
   const [conversations, setConversations] = useState([]);
 
@@ -56,6 +56,7 @@ const Sidebar = () => {
         isOpen={isOpen} // Pass the isOpen state to control the visibility and layout of the chat log
         conversations={conversations}  // Pass the conversations array to display the list of conversations
         handleDeleteChat={handleDeleteChat}  // Pass the handleDeleteChat function to allow deleting conversations
+        onSelectConversation={onSelectConversation}  // Pass the handler to ChatLog
       />
     </Box>
   );
