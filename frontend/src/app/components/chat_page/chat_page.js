@@ -1,3 +1,61 @@
+'use client';
+import React, { useState } from 'react';
+import { Box, Grid } from '@mui/material';
+import { postData } from '../../api/api';
+import ChatBox from '../chatbot/chatbot';
+import Sidebar from '../sidebar/sidebar';
+
+const ChatPage = () => {
+    const [messages, setMessages] = useState([]);
+    const [conversations, setConversations] = useState([
+        { id: 1, name: 'Conversation 1', messages: [] },
+        { id: 2, name: 'Conversation 2', messages: [] },
+        // Add more conversations as needed
+    ]);
+    const [sessionId, setSessionId] = useState('1');
+
+    const onSelectConversation = (index) => {
+        const selectedConversation = conversations[index];
+        setMessages(selectedConversation.messages);
+    };
+
+    const onSend = async (input) => {
+        if (input.trim()) {
+            const userMessage = { text: input.trim(), sender: 'user' };
+            const newMessages = [...messages, userMessage];
+            setMessages(newMessages);
+
+            try {
+                const response = await postData('message', { user_message: input, session_id: sessionId });
+                const systemMessage = { text: response.input, sender: 'system' };
+
+                setMessages([...newMessages, systemMessage]);
+            } catch (error) {
+                console.error('Error posting data:', error);
+            }
+        }
+    };
+
+    return (
+        <Box sx={{ height: '100vh', width: '100vw', display: 'flex' }}>
+            {/* Sidebar Component */}
+            <Sidebar/> 
+
+            <Grid container sx={{ flex: 1, height: '100%' }}>
+                <Grid item xs={12} sx={{ height: '100%', display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
+                    <div style={{ height: '100%', width: '100%', backgroundColor: '#ffffff' }}>
+                        <ChatBox messages={messages} onSend={onSend} />
+                    </div>
+                </Grid>
+            </Grid>
+        </Box>
+    );
+};
+
+export default ChatPage;
+
+
+
 // 'use client';
 // import React, { useState, useEffect } from 'react';
 // import { Box, Grid, Button, Typography } from '@mui/material';
@@ -92,59 +150,3 @@
 
 
 // ChatPage.js
-'use client';
-import React, { useState, useEffect } from 'react';
-import { Box, Grid } from '@mui/material';
-import { postData } from '../../api/api';
-import ChatBox from '../chatbot/chatbot';
-import Sidebar from '../sidebar/sidebar';
-
-const ChatPage = () => {
-    const [messages, setMessages] = useState([]);
-    const [conversations, setConversations] = useState([
-        { id: 1, name: 'Conversation 1', messages: [] },
-        { id: 2, name: 'Conversation 2', messages: [] },
-        // Add more conversations as needed
-    ]);
-    const [sessionId, setSessionId] = useState('1');
-
-    const onSelectConversation = (index) => {
-        const selectedConversation = conversations[index];
-        setMessages(selectedConversation.messages);
-    };
-
-    const onSend = async (input) => {
-        if (input.trim()) {
-            const userMessage = { text: input.trim(), sender: 'user' };
-            const newMessages = [...messages, userMessage];
-            setMessages(newMessages);
-
-            try {
-                const response = await postData('message', { user_message: input, session_id: sessionId });
-                const systemMessage = { text: response.input, sender: 'system' };
-
-                setMessages([...newMessages, systemMessage]);
-            } catch (error) {
-                console.error('Error posting data:', error);
-            }
-        }
-    };
-
-    return (
-        <Box sx={{ height: '100%', width: '100%' }}>
-            <Grid container sx={{ height: '100%' }}>
-                <Grid item xs={12} md={2} sx={{ padding: '8px', maxHeight: '100%'}}>
-                    <Sidebar onSelectConversation={onSelectConversation} />
-                </Grid>
-
-                <Grid item xs={12} md={10} sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100%' }}>
-                    <div style={{ height: '100%', width: '100%', backgroundColor: '#ffffff' }}>
-                        <ChatBox messages={messages} onSend={onSend} />
-                    </div>
-                </Grid>
-            </Grid>
-        </Box>
-    );
-};
-
-export default ChatPage;

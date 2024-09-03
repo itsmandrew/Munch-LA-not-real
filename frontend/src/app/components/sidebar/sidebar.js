@@ -1,7 +1,9 @@
 'use client';
 
 import React, { useState } from 'react';
-import { Box, Grid } from '@mui/material';
+import { Box, IconButton, Typography } from '@mui/material';
+import CloseIcon from '@mui/icons-material/Close';
+import MenuIcon from '@mui/icons-material/Menu';
 import SidebarActions from './sidebar_action';
 import ChatLog from './chatlog/chat_log';
 
@@ -30,20 +32,16 @@ const Sidebar = ({ onSelectConversation }) => {
   return (
     <Box
       sx={{
-        display: 'flex',  // Flexbox layout to stack child elements vertically
-        flexDirection: 'column',  // Stack children vertically
-        height: '100vh',  // Make the sidebar take up the full height of the viewport
-        width: isOpen ? '15%' : '5%',  // Adjust the width based on whether the sidebar is open or collapsed
-        backgroundColor: '#333',  // Set the background color to dark gray
-        color: 'white',  // Set the text color to white
-        transition: 'width 0.3s ease',  // Smooth transition when changing the width
-        position: 'fixed',  // Fix the sidebar to the left side of the screen
-        top: 0,  // Align the sidebar with the top of the viewport
-        left: 0,  // Align the sidebar with the left edge of the viewport
-        zIndex: 2,  // Ensure the sidebar is above other elements
-        overflow: 'hidden',  // Hide any overflowing content
+        width: isOpen ? 240 : 60,
+        transition: 'width 0.3s',
+        overflow: 'hidden',
+        backgroundColor: '#f0f0f0',
+        borderRight: '1px solid #ddd',
+        display: 'flex',
+        flexDirection: 'column',
       }}
     >
+
       {/* SidebarActions contains the logo, collapse button, and new chat button */}
       <SidebarActions
         isOpen={isOpen} // Pass the isOpen state to control the appearance of the sidebar actions
