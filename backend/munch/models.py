@@ -17,6 +17,7 @@ class Message(models.Model):
     message_type = models.CharField(max_length=10,
                                 help_text="Indicates whether the message is from a human or AI.")
     content = models.TextField(help_text="The text content of the message.")
+    timestamp = models.DateTimeField(auto_now_add=True, help_text="The time when the message was created")
 
     def __str__(self):
         """

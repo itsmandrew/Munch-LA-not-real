@@ -7,6 +7,9 @@ import django
 from langchain_core.messages import HumanMessage, AIMessage
 from langchain_core.chat_history import BaseChatMessageHistory
 from .models import Message
+from datetime import timedelta
+from django.utils import timezone
+from django.core.exceptions import ValidationError
 
 # Set up Django environment
 os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'webserver.settings')
@@ -29,13 +32,33 @@ class CustomChatMessageHistory(BaseChatMessageHistory):
         self.messages = []
         self.initialize_session()
 
+    def check_spam(self):
+        """
+        Checks if the user has sent more than 15 messages within the last 2 minutes.
+        
+        Raises:
+            ValidationError: If the user has sent too many messages in the given timeframe.
+        """
+        time_window_start = timezone.now() - timedelta(minutes=2)
+        recent_message_count = Message.objects.filter(
+            session_id=self.session_id,
+            timestamp__gte=time_window_start
+        ).count()
+
+        if recent_message_count >= 15:
+            raise ValidationError("You have sent too many messages in a short period. Please wait before sending more.")
+
     def add_message(self, message):
         """
         Adds a message to the current session's message history and saves it to the database.
 
         Args:
             message (Union[HumanMessage, AIMessage]): The message to add.
+        
+        Raises:
+            ValidationError: If the user has sent too many messages in the given timeframe.
         """
+        self.check_spam()  # Check for spam before adding the message
         self.messages.append(message)
         self.save_message_to_db(message)
 
