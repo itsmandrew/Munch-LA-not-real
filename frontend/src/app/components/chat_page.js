@@ -4,7 +4,7 @@ import ChatBox from './chatbot';
 import Grid from '@mui/material/Grid';
 import Box from '@mui/material/Box'
 import { Typography } from '@mui/material';
-import { postData } from '../api/api';
+import { postData } from './api/api';
 import { Button } from '@mui/material'
 import { Shizuru } from 'next/font/google';
 
@@ -23,9 +23,10 @@ const buttonStyles = {
     },
   };
 
-const ChatPage = () => {
+const ChatPage = ({session}) => {
     const [messages, setMessages] = useState([]);
     const [sessionId, setSessionId] = useState('1');
+    console.log('session', session);
     const buttons = [];
     for (let i = 1; i <= 50; i++) {
         buttons.push(
@@ -61,6 +62,10 @@ const ChatPage = () => {
 
     return (
         <Box sx={{ height: '100%', width: '100%' }}>
+            <Box>
+                <Typography>Hello, {session['user']['name']}</Typography>
+                <img src={session['user']['image']} alt="Profile Picture" style={{ borderRadius: '50%' }} />
+            </Box>
             <Grid container sx={{ height: '100%' }}>
                 <Grid item xs={12} md={2} sx={{ backgroundColor: '#d3d3d3', padding: '8px', maxHeight: '100%'}}>
                     <Box sx={{display: 'flex', flexDirection: 'column', overflowY: 'auto', height: '100%'}}>
