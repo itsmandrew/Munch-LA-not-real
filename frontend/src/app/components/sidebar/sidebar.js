@@ -8,7 +8,7 @@ import SidebarActions from './sidebar_action';
 import ChatLog from './chatlog/chat_log';
 
 // Sidebar component that contains the sidebar actions and chat log
-const Sidebar = ({ onSelectConversation }) => {
+const Sidebar = ({ onSelectConversation, session }) => {
   const [isOpen, setIsOpen] = useState(true);
   const [conversations, setConversations] = useState([]);
 
@@ -42,6 +42,10 @@ const Sidebar = ({ onSelectConversation }) => {
       }}
     >
 
+      <Box sx={{display: 'flex'}}>
+        <Typography>Hello, {session['user']['name']}</Typography>
+        <img src={session['user']['image']} alt="Profile Picture" style={{ borderRadius: '50%' }} />
+      </Box>
       {/* SidebarActions contains the logo, collapse button, and new chat button */}
       <SidebarActions
         isOpen={isOpen} // Pass the isOpen state to control the appearance of the sidebar actions

@@ -7,6 +7,9 @@ import django
 from langchain_core.messages import HumanMessage, AIMessage
 from langchain_core.chat_history import BaseChatMessageHistory
 from .models import Message
+from datetime import timedelta
+from django.utils import timezone
+from django.core.exceptions import ValidationError
 
 # Set up Django environment
 os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'webserver.settings')
@@ -15,19 +18,54 @@ django.setup()
 class CustomChatMessageHistory(BaseChatMessageHistory):
     """
     Manages chat message history by storing and retrieving messages from the database.
-    This class is initialized with a session ID and manages the session-specific chat history.
+    This class is initialized with a session ID and user ID to manage session-specific chat history.
     """
 
-    def __init__(self, session_id: str):
+    def __init__(self, session_id: str, user_id: str):
         """
-        Initializes the chat message history for a given session ID.
+        Initializes the chat message history for a given session ID and user ID.
 
         Args:
             session_id (str): The session ID to manage messages for.
+            user_id (str): The user ID to manage messages for.
         """
+        super().__init__()
+
         self.session_id = session_id
+        self.user_id = user_id
         self.messages = []
         self.initialize_session()
+
+    def get_sessions(self):
+        """
+        Retrieves all unique session IDs that match the given user_id.
+
+        Args:
+            user_id (str): The user ID to filter sessions by.
+
+        Returns:
+            List[str]: A list of unique session IDs associated with the user.
+        """
+        # Query the database for messages that match the user_id and get distinct session IDs
+        session_ids = Message.objects.filter(user_id=self.user_id).values_list('session_id', flat=True).distinct()
+        return list(session_ids)
+
+    def check_spam(self):
+        """
+        Checks if the user has sent more than 15 messages within the last 2 minutes.
+
+        Raises:
+            ValidationError: If the user has sent too many messages in the given timeframe.
+        """
+        time_window_start = timezone.now() - timedelta(minutes=2)
+        recent_message_count = Message.objects.filter(
+            session_id=self.session_id,
+            user_id=self.user_id,
+            timestamp__gte=time_window_start
+        ).count()
+
+        if recent_message_count >= 45:
+            raise ValidationError("You have sent too many messages in a short period. Please wait before sending more.")
 
     def add_message(self, message):
         """
@@ -35,7 +73,11 @@ class CustomChatMessageHistory(BaseChatMessageHistory):
 
         Args:
             message (Union[HumanMessage, AIMessage]): The message to add.
+
+        Raises:
+            ValidationError: If the user has sent too many messages in the given timeframe.
         """
+        self.check_spam()  # Check for spam before adding the message
         self.messages.append(message)
         self.save_message_to_db(message)
 
@@ -62,34 +104,43 @@ class CustomChatMessageHistory(BaseChatMessageHistory):
         Args:
             message (Union[HumanMessage, AIMessage]): The message to save.
         """
-        Message.objects.create(
-            session_id=self.session_id,
-            message_type=message.__class__.__name__.lower(),
-            content=message.content
-        )
+        if isinstance(message, str):
+            Message.objects.create(
+                session_id=self.session_id,
+                user_id=self.user_id,
+                message_type="humanmessage_no_prompt",
+                content=message
+            )
+        else:
+            Message.objects.create(
+                session_id=self.session_id,
+                user_id=self.user_id,
+                message_type=message.__class__.__name__.lower(),
+                content=message.content
+            )
 
     def load_messages_from_db(self):
         """
-        Loads all messages from the database for the current session ID and stores them in memory.
+        Loads all messages from the database for the current session ID and user ID and stores them in memory.
         """
-        db_messages = Message.objects.filter(session_id=self.session_id)
+        db_messages = Message.objects.filter(session_id=self.session_id, user_id=self.user_id)
         for db_message in db_messages:
-            if db_message.message_type == 'human':
+            if db_message.message_type == 'humanmessage':
                 self.messages.append(HumanMessage(content=db_message.content))
-            elif db_message.message_type == 'ai':
+            elif db_message.message_type == 'aimessage':
                 self.messages.append(AIMessage(content=db_message.content))
 
     def clear_messages_from_db(self):
         """
-        Deletes all messages from the database for the current session ID.
+        Deletes all messages from the database for the current session ID and user ID.
         """
-        Message.objects.filter(session_id=self.session_id).delete()
+        Message.objects.filter(session_id=self.session_id, user_id=self.user_id).delete()
 
     def initialize_session(self):
         """
         Initializes the session by loading existing messages or setting up a new session with default messages.
         """
-        if not Message.objects.filter(session_id=self.session_id).exists():
+        if not Message.objects.filter(session_id=self.session_id, user_id=self.user_id).exists():
             # Add initial setup messages if the session is new
             initial_messages = [
                 HumanMessage(content="""
@@ -130,3 +181,43 @@ class CustomChatMessageHistory(BaseChatMessageHistory):
         else:
             # Load existing session messages from the database
             self.load_messages_from_db()
+
+
+    def get_conversation_by_session(self):
+        db_messages = Message.objects.filter(session_id=self.session_id, user_id=self.user_id).order_by('timestamp')
+        messages = []
+        first_non_prompt_human_message_seen = False
+        for db_message in db_messages:
+            if db_message.message_type == 'humanmessage_no_prompt':
+                messages.append({'message_type': 'human_no_prompt', 'content': db_message.content})
+                first_non_prompt_human_message_seen = True
+            elif db_message.message_type == 'aimessage' and first_non_prompt_human_message_seen:
+                messages.append({'message_type': 'aimessage', 'content': db_message.content})
+        return messages
+
+    # def get_all_conversations(self):
+    #     """
+    #     Retrieves all conversations for a given user.
+
+    #     Args:
+    #         user_id (str): The user ID to filter conversations by.
+
+    #     Returns:
+    #         dict: A dictionary where each key is a session ID and each value is a list of messages for that session ID.
+    #     """
+    #     sessions = list(set(CustomChatMessageHistory.get_sessions_by_user_id()))
+    #     conversations_by_session = {}
+    #     for session_id in sessions:
+    #         messages = []
+    #         db_messages = Message.objects.filter(session_id=session_id).order_by('timestamp')
+    #         first_non_prompt_human_message_seen = False
+    #         for db_message in db_messages:
+    #             # print(db_message.message_type)
+    #             if db_message.message_type == 'humanmessage_no_prompt':
+    #                 messages.append({'message_type': 'human_no_prompt', 'content': db_message.content})
+    #                 first_non_prompt_human_message_seen = True
+    #             elif db_message.message_type == 'aimessage' and first_non_prompt_human_message_seen:
+    #                 messages.append({'message_type': 'aimessage', 'content': db_message.content})
+    #         conversations_by_session[session_id] = messages
+
+    #     return conversations_by_session
