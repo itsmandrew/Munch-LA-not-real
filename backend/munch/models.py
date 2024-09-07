@@ -12,11 +12,14 @@ class Message(models.Model):
     content of the message.
     """
 
+    user_id = models.CharField(max_length=100,
+                                help_text="Unique identifier for the user.")
     session_id = models.CharField(max_length=100,
                                 help_text="Unique identifier for the chat session.")
     message_type = models.CharField(max_length=10,
                                 help_text="Indicates whether the message is from a human or AI.")
     content = models.TextField(help_text="The text content of the message.")
+    timestamp = models.DateTimeField(auto_now_add=True, help_text="The time when the message was created")
 
     def __str__(self):
         """
