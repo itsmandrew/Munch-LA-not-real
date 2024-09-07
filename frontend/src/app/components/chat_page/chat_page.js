@@ -60,7 +60,7 @@ const ChatPage = ({session}) => {
 
     const handleNewChat = async () => {
         try {
-            const response = await getNewSession('get_new_session');
+            const response = await getNewSession('get_new_session', { user_id: session['user']['email'] });
             setSessionId(response['new_session']);
             setConversations([...conversations, response['new_session']])
             setMessages([]);

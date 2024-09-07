@@ -132,7 +132,7 @@ def get_conversation(request, payload: GetConversation):
     return JsonResponse({'conversation': conversation})
 
 @api.post('/get_new_session')
-def get_new_session(request):
+def get_new_session(request, payload: FindSessionIDsRequest):
     """
     Handle an incoming request to retrieve all session IDs for a given user.
 
@@ -143,5 +143,7 @@ def get_new_session(request):
     Returns:
         JsonResponse: JSON response with the list of session IDs or an error message.
     """
+    user_id = payload.user_id
     new_session = get_next_available_session()
+    CustomChatMessageHistory(user_id=user_id, session_id=new_session)
     return JsonResponse({'new_session': new_session})

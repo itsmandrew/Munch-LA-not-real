@@ -71,7 +71,7 @@ export async function getConversation(endpoint, payload) {
       headers: {
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify(payload), // Ensure payload is correctly formatted
+      body: JSON.stringify(payload),
     });
       if (!response.ok) {
         throw new Error('Network response was not ok');
@@ -85,13 +85,14 @@ export async function getConversation(endpoint, payload) {
 }
 
 // Function to post data to an endpoint
-export async function getNewSession(endpoint) {
+export async function getNewSession(endpoint, payload) {
   try {
     const response = await fetch(`${API_BASE_URL}${endpoint}`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
       },
+      body: JSON.stringify(payload), 
     });
       if (!response.ok) {
         throw new Error('Network response was not ok');
