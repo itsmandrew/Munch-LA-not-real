@@ -19,8 +19,8 @@ const ChatLog = ({ isOpen, conversations, handleDeleteChat, onSelectConversation
         // Render each conversation as a list item
         <ListItem
           button  // This makes the ListItem act as a button
-          key={index}  // Unique key for each list item, based on its index
-          onClick={() => onSelectConversation(index)}  // Call onSelectConversation when clicked
+          key={conversation}  // Unique key for each list item, based on its index
+          onClick={() => onSelectConversation(conversation)}  // Call onSelectConversation when clicked
           sx={{
             justifyContent: 'space-between',  // Distribute space between the conversation text and the delete button
             paddingLeft: isOpen ? '16px' : '8px',  // Adjust padding based on whether the sidebar is open or collapsed

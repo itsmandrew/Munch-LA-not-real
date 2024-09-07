@@ -11,8 +11,8 @@ from langchain_core.runnables.history import RunnableWithMessageHistory
 from langchain_openai import ChatOpenAI
 from ninja import NinjaAPI
 from utils.helpers import chromadb_init, format_docs, generate_prompt
-from .custom_chat_history import CustomChatMessageHistory
-from .schema import MessageRequest, FindSessionIDsRequest
+from .custom_chat_history import CustomChatMessageHistory, get_sessions, get_next_available_session
+from .schema import MessageRequest, FindSessionIDsRequest, GetConversation
 
 # Create an instance of NinjaAPI for routing and request handling
 api = NinjaAPI()
@@ -56,50 +56,51 @@ def message(request, user_query: MessageRequest):
         """
         return CustomChatMessageHistory(session_id, user_id=user_id)
 
-    # try: 
-    # Configure the session
-    conf = {'configurable': {'session_id': session_id}}
+    try: 
+        # Configure the session
+        conf = {'configurable': {'session_id': session_id}}
 
-    # Initialize the ChromaDB client
-    langchain_chroma = chromadb_init(OPEN_AI_API_KEY)
-    retriever = langchain_chroma.as_retriever(search_kwargs={"k": 5})
+        # Initialize the ChromaDB client
+        langchain_chroma = chromadb_init(OPEN_AI_API_KEY)
+        retriever = langchain_chroma.as_retriever(search_kwargs={"k": 5})
 
-    # Initialize the LLM (Large Language Model) for response generation
-    llm = ChatOpenAI(api_key=OPEN_AI_API_KEY, model="gpt-4o-mini")
-    with_message_history = RunnableWithMessageHistory(llm, get_session_history)
+        # Initialize the LLM (Large Language Model) for response generation
+        llm = ChatOpenAI(api_key=OPEN_AI_API_KEY, model="gpt-4o-mini")
+        with_message_history = RunnableWithMessageHistory(llm, get_session_history)
 
-    # Create an instance of CustomChatMessageHistory
-    chat_history = CustomChatMessageHistory(session_id=session_id, user_id=user_id)
+        # # Create an instance of CustomChatMessageHistory
+        chat_history = CustomChatMessageHistory(session_id=session_id, user_id=user_id)
 
-    # Add the message to the chat history
-    chat_history.add_message(user_message)
+        # # Add the message to the chat history
+        chat_history.add_message(user_message)
 
-    # Retrieve and format context from the retriever
-    context = format_docs(retriever.invoke(user_message))
 
-    # Generate the prompt based on the context and user message
-    prompt = generate_prompt(context, user_message)
+        # Retrieve and format context from the retriever
+        context = format_docs(retriever.invoke(user_message))
 
-    # Get the response from the LLM using the prompt and session history
-    response = with_message_history.invoke(
-        [HumanMessage(content=prompt)],
-        config=conf
-    )
+        # Generate the prompt based on the context and user message
+        prompt = generate_prompt(context, user_message)
 
-    print(chat_history.get_conversation_by_session())
-    # Return the response in JSON format
-    return JsonResponse({'input': response.content, 'sender': 'system'})
+        # Get the response from the LLM using the prompt and session history
+        response = with_message_history.invoke(
+            [HumanMessage(content=prompt)],
+            config=conf
+        )
 
-    # except ValidationError as e:
-    #     # Handle the ValidationError (e.g., too many messages in a short period)
-    #     return JsonResponse({'error': str(e)}, status=400)
-    # except Exception as e:
-    #     # Handle any other unexpected exceptions
-    #     return JsonResponse({'error': 'An unexpected error occurred.'}, status=500)
+        # print(chat_history.get_conversation_by_session())
+        # Return the response in JSON format
+        return JsonResponse({'message_type': 'aimessage', 'content': response.content})
+
+    except ValidationError as e:
+        # Handle the ValidationError (e.g., too many messages in a short period)
+        return JsonResponse({'error': str(e)}, status=400)
+    except Exception as e:
+        # Handle any other unexpected exceptions
+        return JsonResponse({'error': 'An unexpected error occurred.'}, status=500)
     
 
-@api.post('/get_user_messages')
-def get_user_messages(request, payload: FindSessionIDsRequest):
+@api.post('/get_user_sessions')
+def get_user_sessions(request, payload: FindSessionIDsRequest):
     """
     Handle an incoming request to retrieve all session IDs for a given user.
 
@@ -111,15 +112,36 @@ def get_user_messages(request, payload: FindSessionIDsRequest):
         JsonResponse: JSON response with the list of session IDs or an error message.
     """
     user_id = payload.user_id
-    
-    # try:
-        # Retrieve the list of session IDs associated with the given user ID
-    res = CustomChatMessageHistory.get_all_conversations(user_id=user_id)
-    i = 0
-    for session_id in res:
-        print(res[session_id])
-        i += 1
-        if i > 3:
-            break
-    # except Exception as e:
-    #     return JsonResponse({'error': str(e)}, status=500)
+    return JsonResponse({'sessions': get_sessions(user_id=user_id)})
+
+@api.post('/get_conversation')
+def get_conversation(request, payload: GetConversation):
+    """
+    Handle an incoming request to retrieve all session IDs for a given user.
+
+    Args:
+        request: The HTTP request object.
+        payload (FindSessionIDsRequest): An object containing the user ID.
+
+    Returns:
+        JsonResponse: JSON response with the list of session IDs or an error message.
+    """
+    user_id = payload.user_id
+    session_id = payload.session_id
+    conversation = CustomChatMessageHistory(user_id=user_id, session_id=session_id).get_conversation()
+    return JsonResponse({'conversation': conversation})
+
+@api.post('/get_new_session')
+def get_new_session(request):
+    """
+    Handle an incoming request to retrieve all session IDs for a given user.
+
+    Args:
+        request: The HTTP request object.
+        payload (FindSessionIDsRequest): An object containing the user ID.
+
+    Returns:
+        JsonResponse: JSON response with the list of session IDs or an error message.
+    """
+    new_session = get_next_available_session()
+    return JsonResponse({'new_session': new_session})

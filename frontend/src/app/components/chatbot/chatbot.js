@@ -35,15 +35,15 @@ const ChatBox = ({ messages, onSend }) => {
             <ListItem
               key={index} // Unique key for each message based on its index
               sx={{
-                justifyContent: msg.sender === 'user' ? 'flex-end' : 'flex-start', // Align message to the right for user, left for system
-                textAlign: msg.sender === 'user' ? 'right' : 'left',  // Align text inside the message box
+                justifyContent: msg.message_type === 'human_no_prompt' ? 'flex-end' : 'flex-start', // Align message to the right for user, left for system
+                textAlign: msg.message_type === 'human_no_prompt' ? 'right' : 'left',  // Align text inside the message box
               }}
             >
               <Box
                 sx={{
                   maxWidth: '60%',  // Limit the message box width to 75% of the container
-                  background: msg.sender === 'user' ? '#000000' : '#efeeee',  // Black background for user messages, light gray for system
-                  color: msg.sender === 'user' ? '#fff' : '#000',  // White text for user messages, black text for system
+                  background: msg.message_type === 'human_no_prompt' ? '#000000' : '#efeeee',  // Black background for user messages, light gray for system
+                  color: msg.message_type === 'human_no_prompt' ? '#fff' : '#000',  // White text for user messages, black text for system
                   borderRadius: '8px',  // Rounded corners for the message box
                   padding: '8px',  // Padding inside the message box
                 }}
@@ -59,7 +59,7 @@ const ChatBox = ({ messages, onSend }) => {
                       ),
                     }}
                   >
-                    {msg.text}
+                    {msg.content}
                   </Markdown>
                 </Box>
               </Box>

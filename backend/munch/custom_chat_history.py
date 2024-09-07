@@ -29,26 +29,11 @@ class CustomChatMessageHistory(BaseChatMessageHistory):
             session_id (str): The session ID to manage messages for.
             user_id (str): The user ID to manage messages for.
         """
-        super().__init__()
 
         self.session_id = session_id
         self.user_id = user_id
         self.messages = []
         self.initialize_session()
-
-    def get_sessions(self):
-        """
-        Retrieves all unique session IDs that match the given user_id.
-
-        Args:
-            user_id (str): The user ID to filter sessions by.
-
-        Returns:
-            List[str]: A list of unique session IDs associated with the user.
-        """
-        # Query the database for messages that match the user_id and get distinct session IDs
-        session_ids = Message.objects.filter(user_id=self.user_id).values_list('session_id', flat=True).distinct()
-        return list(session_ids)
 
     def check_spam(self):
         """
@@ -64,7 +49,7 @@ class CustomChatMessageHistory(BaseChatMessageHistory):
             timestamp__gte=time_window_start
         ).count()
 
-        if recent_message_count >= 45:
+        if recent_message_count >= 25:
             raise ValidationError("You have sent too many messages in a short period. Please wait before sending more.")
 
     def add_message(self, message):
@@ -77,8 +62,10 @@ class CustomChatMessageHistory(BaseChatMessageHistory):
         Raises:
             ValidationError: If the user has sent too many messages in the given timeframe.
         """
+        
         self.check_spam()  # Check for spam before adding the message
-        self.messages.append(message)
+        if isinstance(message, (HumanMessage, AIMessage)):
+            self.messages.append(message)
         self.save_message_to_db(message)
 
     def get_messages(self):
@@ -88,6 +75,7 @@ class CustomChatMessageHistory(BaseChatMessageHistory):
         Returns:
             List[Union[HumanMessage, AIMessage]]: The list of messages in the session.
         """
+        print(self.messages)
         return self.messages
 
     def clear(self):
@@ -123,12 +111,13 @@ class CustomChatMessageHistory(BaseChatMessageHistory):
         """
         Loads all messages from the database for the current session ID and user ID and stores them in memory.
         """
-        db_messages = Message.objects.filter(session_id=self.session_id, user_id=self.user_id)
+        db_messages = Message.objects.filter(session_id=self.session_id, user_id=self.user_id).order_by('timestamp')
         for db_message in db_messages:
             if db_message.message_type == 'humanmessage':
                 self.messages.append(HumanMessage(content=db_message.content))
             elif db_message.message_type == 'aimessage':
                 self.messages.append(AIMessage(content=db_message.content))
+                
 
     def clear_messages_from_db(self):
         """
@@ -183,7 +172,7 @@ class CustomChatMessageHistory(BaseChatMessageHistory):
             self.load_messages_from_db()
 
 
-    def get_conversation_by_session(self):
+    def get_conversation(self):
         db_messages = Message.objects.filter(session_id=self.session_id, user_id=self.user_id).order_by('timestamp')
         messages = []
         first_non_prompt_human_message_seen = False
@@ -195,29 +184,33 @@ class CustomChatMessageHistory(BaseChatMessageHistory):
                 messages.append({'message_type': 'aimessage', 'content': db_message.content})
         return messages
 
-    # def get_all_conversations(self):
-    #     """
-    #     Retrieves all conversations for a given user.
+def get_sessions(user_id):
+    """
+    Retrieves all unique session IDs that match the given user_id.
 
-    #     Args:
-    #         user_id (str): The user ID to filter conversations by.
+    Args:
+        user_id (str): The user ID to filter sessions by.
 
-    #     Returns:
-    #         dict: A dictionary where each key is a session ID and each value is a list of messages for that session ID.
-    #     """
-    #     sessions = list(set(CustomChatMessageHistory.get_sessions_by_user_id()))
-    #     conversations_by_session = {}
-    #     for session_id in sessions:
-    #         messages = []
-    #         db_messages = Message.objects.filter(session_id=session_id).order_by('timestamp')
-    #         first_non_prompt_human_message_seen = False
-    #         for db_message in db_messages:
-    #             # print(db_message.message_type)
-    #             if db_message.message_type == 'humanmessage_no_prompt':
-    #                 messages.append({'message_type': 'human_no_prompt', 'content': db_message.content})
-    #                 first_non_prompt_human_message_seen = True
-    #             elif db_message.message_type == 'aimessage' and first_non_prompt_human_message_seen:
-    #                 messages.append({'message_type': 'aimessage', 'content': db_message.content})
-    #         conversations_by_session[session_id] = messages
+    Returns:
+        List[str]: A list of unique session IDs associated with the user.
+    """
+    # Query the database for messages that match the user_id and get distinct session IDs
+    session_ids = set(Message.objects.filter(user_id=user_id).values_list('session_id', flat=True))
+    return list(session_ids)
 
-    #     return conversations_by_session
+def get_next_available_session():
+    """
+    Finds the first available session ID that is not used in the database.
+
+    Returns:
+        int: The first available session ID.
+    """
+    # Retrieve all existing session IDs
+    existing_session_ids = set(Message.objects.values_list('session_id', flat=True))
+
+    # Start checking from 0 and continue until finding an available session ID
+    next_session_id = 0
+    while str(next_session_id) in existing_session_ids:
+        next_session_id += 1
+
+    return str(next_session_id)

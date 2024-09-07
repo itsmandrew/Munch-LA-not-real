@@ -21,11 +21,13 @@ class FindSessionIDsRequest(Schema):
     # user_message: str  # The message input provided by the user.
     user_id: str     # The unique identifier for the current chat session.
 
-# class SessionIDs(Schema):
-#     """
-#     Schema representing the expected structure of an incoming API request
-#     that contains a user's message and the associated session ID.
-#     """
-#     session_ids: List[str]    # A list of unique identifiers for chat sessions.
 
-    
+class GetConversation(Schema):
+    """
+    Schema representing the expected structure of an incoming API request
+    that contains a user's message and the associated session ID.
+    """
+    # user_message: str  # The message input provided by the user.
+    user_id: str     # The unique identifier for the current chat session.
+    session_id: str
+
