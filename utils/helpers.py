@@ -50,9 +50,9 @@ def pinecone_init(index_name: str) -> PineconeVectorStore:
     # Set up OpenAI embeddings model
     embeddings_model = OpenAIEmbeddings(api_key=OPEN_AI_API_KEY,
                                         model="text-embedding-3-small")
-    
-    # configure client  
-    pc = Pinecone(api_key=PINECONE_API_KEY)  
+
+    # configure client
+    pc = Pinecone(api_key=PINECONE_API_KEY)
 
     existing_indexes = [index_info["name"] for index_info in pc.list_indexes()]
 
@@ -68,7 +68,7 @@ def pinecone_init(index_name: str) -> PineconeVectorStore:
 
     index = pc.Index(index_name)
     langchain_pc = PineconeVectorStore(index=index, embedding=embeddings_model)
-    
+
     return langchain_pc
 
 
@@ -234,7 +234,7 @@ def split_documents_and_add_to_collection(docs: List[str], meta: List[Dict],
     for i, m in zip(docs, meta):
         d = Document(page_content=i, metadata=m)
         documents_object_list.append(d)
-        
+
     uuids = [str(uuid4()) for _ in range(len(documents_object_list))]
 
     vector_store.add_documents(documents=documents_object_list, ids=uuids)
