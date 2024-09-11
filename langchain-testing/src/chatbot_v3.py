@@ -25,7 +25,6 @@ def main():
     api_key = os.getenv('OPENAI_API_KEY')
     if not api_key:
         raise ValueError("OPENAI_API_KEY environment variable is not set.")
-
     # Initialize ChromaDB client and create a retriever tool
     langchain_chroma = chromadb_init(api_key)
     retriever = langchain_chroma.as_retriever(search_kwargs={"k": 5})

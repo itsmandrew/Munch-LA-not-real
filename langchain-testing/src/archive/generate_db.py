@@ -5,7 +5,6 @@ This module generates a vector database of restaurant information using ChromaDB
 It processes restaurant data, summarizes reviews, and stores the information in a vector database.
 """
 
-import os
 from utils.helpers import documents_init, chromadb_init, format_restaurant_data, split_documents_and_add_to_collection
 
 def main():
