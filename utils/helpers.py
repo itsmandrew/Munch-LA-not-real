@@ -22,15 +22,57 @@ Functions:
 
 import json
 import os
+import time
 from typing import List, Dict, Tuple
+from uuid import uuid4
 import chromadb
 from langchain_chroma import Chroma
 from langchain_openai import ChatOpenAI, OpenAIEmbeddings
 from langchain_core.prompts import PromptTemplate
+from langchain_pinecone import PineconeVectorStore
+from pinecone import Pinecone, ServerlessSpec
+from langchain_core.documents import Document
 
 OPEN_AI_API_KEY = os.getenv('OPENAI_API_KEY')
+PINECONE_API_KEY = os.getenv('PINECONE_API_KEY')
 
-def chromadb_init(api_key: str) -> Chroma:
+def pinecone_init(index_name: str) -> PineconeVectorStore:
+    """
+    Initializes the Pinecone client and sets up the collection for restaurant data.
+
+    Args:
+        path (str): The path to the JSON configuration file containing the OpenAI API key.
+
+    Returns:
+        PineconeVectorStore: The initialized Pinecone client.
+    """
+
+    # Set up OpenAI embeddings model
+    embeddings_model = OpenAIEmbeddings(api_key=OPEN_AI_API_KEY,
+                                        model="text-embedding-3-small")
+    
+    # configure client  
+    pc = Pinecone(api_key=PINECONE_API_KEY)  
+
+    existing_indexes = [index_info["name"] for index_info in pc.list_indexes()]
+
+    if index_name not in existing_indexes:
+        pc.create_index(
+            name=index_name,
+            dimension=1536,
+            metric="cosine",
+            spec=ServerlessSpec(cloud="aws", region="us-east-1"),
+        )
+        while not pc.describe_index(index_name).status["ready"]:
+            time.sleep(1)
+
+    index = pc.Index(index_name)
+    langchain_pc = PineconeVectorStore(index=index, embedding=embeddings_model)
+    
+    return langchain_pc
+
+
+def chromadb_init() -> Chroma:
     """
     Initializes the ChromaDB client and sets up the collection for restaurant data.
 
@@ -42,7 +84,7 @@ def chromadb_init(api_key: str) -> Chroma:
     """
 
     # Set up OpenAI embeddings model
-    embeddings_model = OpenAIEmbeddings(api_key=api_key,
+    embeddings_model = OpenAIEmbeddings(api_key=OPEN_AI_API_KEY,
                                         model="text-embedding-3-small")
 
     # Create or connect to a persistent ChromaDB client
@@ -172,7 +214,7 @@ def format_restaurant_data(restaurant_data: List[Dict]) -> List[Dict]:
     } for restaurant in restaurant_data]
 
 def split_documents_and_add_to_collection(docs: List[str], meta: List[Dict],
-                                          chroma: Chroma) -> None:
+                                          vector_store: object) -> None:
     """
     Adds documents and their corresponding metadata to a ChromaDB collection.
 
@@ -187,5 +229,12 @@ def split_documents_and_add_to_collection(docs: List[str], meta: List[Dict],
         return
 
     print('Adding data to DB')
-    for i, (document, metadata) in enumerate(zip(docs, meta)):
-        chroma.add_texts(texts=[document], metadatas=[metadata], ids=[str(i)])
+
+    documents_object_list = []
+    for i, m in zip(docs, meta):
+        d = Document(page_content=i, metadata=m)
+        documents_object_list.append(d)
+        
+    uuids = [str(uuid4()) for _ in range(len(documents_object_list))]
+
+    vector_store.add_documents(documents=documents_object_list, ids=uuids)
