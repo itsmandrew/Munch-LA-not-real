@@ -129,6 +129,7 @@ venv/
 ENV/
 env.bak/
 venv.bak/
+.env.local
 
 # Spyder project settings
 .spyderproject
@@ -160,4 +161,5 @@ chroma_db
 __pycache__
 db.sqlite3
 
-.env
+# Ignore SQLite3 databases
+*.sqlite3
