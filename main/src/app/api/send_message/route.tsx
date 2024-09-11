@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { openDb } from '@/lib/db';
+import { openDb } from '@/db/db';
 import { ChatOpenAI } from '@langchain/openai';
 import {
   ChatPromptTemplate,
