@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { openDb } from '@/lib/db';
+import { openDb } from '@/db/db';
 import { ChatOpenAI } from '@langchain/openai';
 import {
   ChatPromptTemplate,
@@ -15,6 +15,11 @@ import { HumanMessage, AIMessage } from '@langchain/core/messages';
 import { z } from 'zod';
 import { zodToJsonSchema } from 'zod-to-json-schema';
 import { JsonOutputFunctionsParser } from "langchain/output_parsers";
+import { Pinecone } from "@pinecone-database/pinecone";
+import { Document } from "@langchain/core/documents";
+import { OpenAIEmbeddings } from "@langchain/openai";
+import { PineconeStore } from "@langchain/pinecone";
+import { Database } from 'sqlite';
 
 // Type definitions for the request body and database message
 interface RequestBody {
@@ -31,6 +36,41 @@ interface DBMessage {
   timestamp: string;
 }
 
+interface RestaurantMetadata {
+  address: string;
+  name: string;
+  rating: number;
+  place_id: string;
+}
+
+interface Restaurant {
+  pageContent: string;
+  metadata: RestaurantMetadata;
+  id: string;
+}
+
+/**
+ * Formats a restaurant object into a well-structured string.
+ * @param restaurant - The restaurant object to format.
+ * @returns A well-formatted string representation of the restaurant information.
+ */
+function formatRestaurantInfo(restaurant: Restaurant): string {
+  const { pageContent, metadata } = restaurant;
+
+  // Extract metadata
+  const { address, name, rating } = metadata;
+
+  // Construct formatted string
+  return `
+Restaurant Data:
+
+**${name}**
+
+- **Address:** ${address}
+- **Rating:** ${rating}
+- **Description:** ${pageContent}
+  `;
+}
 
 // Define the Zod schema for the structured output
 const restaurantSchema = z.object({
@@ -66,22 +106,32 @@ const functionCallingModel = model.bind({
   function_call: { name: "output_formatter" },
 });
 
-// Create the prompt template
+// Create an improved prompt template to handle contextual conversations
 const prompt = new ChatPromptTemplate({
   promptMessages: [
     SystemMessagePromptTemplate.fromTemplate(
-      "Extract and list information about restaurants from the following text. Include name, address, rating, price, and a summary of reviews for each restaurant. If the user's message has nothing to do with the restaurants/food, then you can just leave the restaurants list blank and just have the general_response field filled."
+      "You are a friendly and knowledgeable guide specializing in restaurants in Los Angeles. Your primary role is to help users with their queries, " +
+      "especially those related to food, dining experiences, and specific restaurants. When responding to user messages, please adhere to the following guidelines: " +
+      "\n\n1. **Maintain Conversational Context**: If the user asks a follow-up question or gives a brief response (e.g., 'yes', 'tell me more'), continue the conversation naturally based on the context. " +
+      "Do not switch topics unless explicitly instructed. Avoid fetching new information unless required by the user. " +
+      "\n\n2. **Populate Restaurant Information Judiciously**: Only include detailed information about restaurants (name, address, rating, price, and review summary) " +
+      "in the 'restaurants' field if the user's query explicitly asks for it, such as asking for recommendations, details about a restaurant, or comparing multiple dining options. " +
+      "If the user's message is not directly related to obtaining restaurant information, only fill the 'general_response' field with a relevant and thoughtful reply." +
+      "\n\n3. **Utilize the Vector Database Appropriately**: If drawing information from the vector database, ensure it enhances the conversation or answers a specific user query. " +
+      "Avoid using vector-based information when it is unrelated to the immediate context of the conversation or when the user expects a continuation of the current discussion. " +
+      "\n\n4. **Prompt Thoughtful Responses**: For unrelated or ambiguous queries, suggest interesting food topics, new restaurants to try, or ask about the user's favorite dining experiences."
     ),
-    new MessagesPlaceholder("history"), // This is where the history will be inserted
+    new MessagesPlaceholder("history"),
     HumanMessagePromptTemplate.fromTemplate("{inputText}"),
   ],
   inputVariables: ["inputText", "history"],
+  outputVariables: ["general_response", "restaurants"],
 });
+
 
 const outputParser = new JsonOutputFunctionsParser();
 
 const chain = prompt.pipe(functionCallingModel).pipe(outputParser);
-// const runnable = prompt.pipe(model);
 
 export async function POST(req: Request): Promise<Response> {
   if (req.method !== 'POST') {
@@ -90,6 +140,16 @@ export async function POST(req: Request): Promise<Response> {
 
   try {
     const { user_id, session_id, message }: RequestBody = await req.json();
+    const pinecone = new Pinecone();
+
+    const pineconeIndex = pinecone.Index(process.env.PINECONE_INDEX!);
+    const vectorStore = await PineconeStore.fromExistingIndex(
+      new OpenAIEmbeddings({modelName: "text-embedding-3-small"}),
+      { pineconeIndex }
+    );
+    // Perform the similarity search
+    const results = await vectorStore.similaritySearch(message, 8);
+    const formattedResults: string[] = results.map(result => formatRestaurantInfo(result));
 
     if (!user_id || !session_id || !message) {
       return NextResponse.json({ error: 'Missing user_id, session_id, or message' }, { status: 400 });
@@ -97,6 +157,17 @@ export async function POST(req: Request): Promise<Response> {
 
     // Open SQLite database
     const db = await openDb();
+
+    for (const result of formattedResults) {
+      await db.run(
+        'INSERT INTO messages (user_id, session_id, message_type, content, timestamp) VALUES (?, ?, ?, ?, ?)',
+        user_id,
+        session_id,
+        'restaurant_data',
+        result,
+        new Date().toISOString()
+      );
+    }
 
     // Insert the new message into the database
     await db.run(
@@ -114,12 +185,14 @@ export async function POST(req: Request): Promise<Response> {
       session_id,
       user_id
     );
+
+    console.log(dbMessages);
     
     // Create a new message history instance for the current session
     const messageHistory = new ChatMessageHistory();
     // Load messages into the LangChain history using specific message types
     dbMessages.forEach((dbMessage: DBMessage) => {
-      if (dbMessage.message_type === 'human_message_no_prompt') {
+      if (dbMessage.message_type === 'human_message_no_prompt' || dbMessage.message_type === 'restaurant_data') {
         messageHistory.addMessage(new HumanMessage(dbMessage.content));
       } else if (dbMessage.message_type === 'ai_message') {
         messageHistory.addMessage(new AIMessage(dbMessage.content));
