@@ -1,5 +1,4 @@
 import { NextResponse } from "next/server";
-import { openDb } from "@/db/db";
 import { ChatOpenAI } from "@langchain/openai";
 import {
   ChatPromptTemplate,
@@ -19,10 +18,9 @@ import { z } from "zod";
 import { zodToJsonSchema } from "zod-to-json-schema";
 import { JsonOutputFunctionsParser } from "langchain/output_parsers";
 import { Pinecone } from "@pinecone-database/pinecone";
-import { Document } from "@langchain/core/documents";
 import { OpenAIEmbeddings } from "@langchain/openai";
 import { PineconeStore } from "@langchain/pinecone";
-import { Database } from "sqlite";
+import clientPromise from "@/db/mongodb";
 
 // Type definitions for the request body and database message
 interface RequestBody {
@@ -31,11 +29,9 @@ interface RequestBody {
   message: string;
 }
 
-interface DBMessage {
-  user_id: string;
-  session_id: string;
+interface Message {
   message_type: string;
-  content: string;
+  content: any;
   timestamp: string;
 }
 
@@ -43,36 +39,14 @@ interface RestaurantMetadata {
   address: string;
   name: string;
   rating: number;
-  place_id: string;
+  price: string;  // Updated to include price range
+  summary: string; // Added summary
 }
 
 interface Restaurant {
   pageContent: string;
   metadata: RestaurantMetadata;
   id: string;
-}
-
-/**
- * Formats a restaurant object into a well-structured string.
- * @param restaurant - The restaurant object to format.
- * @returns A well-formatted string representation of the restaurant information.
- */
-function formatRestaurantInfo(restaurant: Restaurant): string {
-  const { pageContent, metadata } = restaurant;
-
-  // Extract metadata
-  const { address, name, rating } = metadata;
-
-  // Construct formatted string
-  return `
-Restaurant Data:
-
-**${name}**
-
-- **Address:** ${address}
-- **Rating:** ${rating}
-- **Description:** ${pageContent}
-  `;
 }
 
 // Define the Zod schema for the structured output
@@ -115,27 +89,53 @@ const functionCallingModel = model.bind({
 const prompt = new ChatPromptTemplate({
   promptMessages: [
     SystemMessagePromptTemplate.fromTemplate(
-      "You are a friendly and knowledgeable guide specializing in restaurants in Los Angeles. Your primary role is to help users with their queries, " +
-        "especially those related to food, dining experiences, and specific restaurants. When responding to user messages, please adhere to the following guidelines: " +
-        "\n\n1. **Maintain Conversational Context**: If the user asks a follow-up question or gives a brief response (e.g., 'yes', 'tell me more'), continue the conversation naturally based on the context. " +
-        "Do not switch topics unless explicitly instructed. Avoid fetching new information unless required by the user. " +
-        "\n\n2. **Populate Restaurant Information Judiciously**: Only include detailed information about restaurants (name, address, rating, price, and review summary) " +
-        "in the 'restaurants' field if the user's query explicitly asks for it, such as asking for recommendations, details about a restaurant, or comparing multiple dining options. " +
-        "If the user's message is not directly related to obtaining restaurant information, only fill the 'general_response' field with a relevant and thoughtful reply." +
-        "\n\n3. **Utilize the Vector Database Appropriately**: If drawing information from the vector database, ensure it enhances the conversation or answers a specific user query. " +
-        "Avoid using vector-based information when it is unrelated to the immediate context of the conversation or when the user expects a continuation of the current discussion. " +
-        "\n\n4. **Prompt Thoughtful Responses**: For unrelated or ambiguous queries, suggest interesting food topics, new restaurants to try, or ask about the user's favorite dining experiences."
+      "You are a friendly and knowledgeable guide specializing in restaurants in Los Angeles..."
     ),
     new MessagesPlaceholder("history"),
     HumanMessagePromptTemplate.fromTemplate("{inputText}"),
   ],
   inputVariables: ["inputText", "history"],
-  outputVariables: ["general_response", "restaurants"],
 });
 
 const outputParser = new JsonOutputFunctionsParser();
-
 const chain = prompt.pipe(functionCallingModel).pipe(outputParser);
+
+async function upsertConversationMessage(user_id: string, session_id: string, newMessage: Message) {
+  const currentTime = new Date().toISOString();
+
+  try {
+    const client = await clientPromise;
+    const db = client.db("MunchLA");
+
+    // Update or create the user's document and set the last_updated field
+    await db.collection("Conversations").updateOne(
+      { _id: user_id },
+      {
+        $set: {
+          [`sessions.${session_id}.messages`]: (
+            await db.collection("Conversations").findOne({ _id: user_id })
+          )?.sessions?.[session_id]?.messages || [],
+          [`sessions.${session_id}.last_updated`]: currentTime, // Set last_updated to the current time
+        }
+      },
+      { upsert: true }
+    );
+
+    // Update the session with the new message and update the last_updated field
+    await db.collection("Conversations").updateOne(
+      { _id: user_id },
+      {
+        $push: { [`sessions.${session_id}.messages`]: newMessage },
+        $set: { [`sessions.${session_id}.last_updated`]: currentTime }, // Update last_updated when a new message is added
+      },
+      { upsert: true }
+    );
+
+    console.log("Message inserted or updated successfully");
+  } catch (error) {
+    console.error("Error inserting or updating message:", error);
+  }
+}
 
 export async function POST(req: Request): Promise<Response> {
   if (req.method !== "POST") {
@@ -146,19 +146,10 @@ export async function POST(req: Request): Promise<Response> {
   }
 
   try {
+    console.time("Total execution time");
+    console.time("Parse request body");
     const { user_id, session_id, message }: RequestBody = await req.json();
-    const pinecone = new Pinecone();
-
-    const pineconeIndex = pinecone.Index(process.env.PINECONE_INDEX!);
-    const vectorStore = await PineconeStore.fromExistingIndex(
-      new OpenAIEmbeddings({ modelName: "text-embedding-3-small" }),
-      { pineconeIndex }
-    );
-    // Perform the similarity search
-    const results = await vectorStore.similaritySearch(message, 8);
-    const formattedResults: string[] = results.map((result) =>
-      formatRestaurantInfo(result)
-    );
+    console.timeEnd("Parse request body");
 
     if (!user_id || !session_id || !message) {
       return NextResponse.json(
@@ -167,53 +158,58 @@ export async function POST(req: Request): Promise<Response> {
       );
     }
 
-    // Open SQLite database
-    const db = await openDb();
-
-    for (const result of formattedResults) {
-      await db.run(
-        "INSERT INTO messages (user_id, session_id, message_type, content, timestamp) VALUES (?, ?, ?, ?, ?)",
-        user_id,
-        session_id,
-        "restaurant_data",
-        result,
-        new Date().toISOString()
-      );
-    }
-
-    // Insert the new message into the database
-    await db.run(
-      "INSERT INTO messages (user_id, session_id, message_type, content, timestamp) VALUES (?, ?, ?, ?, ?)",
-      user_id,
-      session_id,
-      "human_message_no_prompt",
-      message,
-      new Date().toISOString()
+    console.time("Pinecone similarity search");
+    const pinecone = new Pinecone();
+    const pineconeIndex = pinecone.Index(process.env.PINECONE_INDEX!);
+    const vectorStore = await PineconeStore.fromExistingIndex(
+      new OpenAIEmbeddings({ modelName: "text-embedding-3-small" }),
+      { pineconeIndex }
     );
+    const results = await vectorStore.similaritySearch(message, 8);
+    console.timeEnd("Pinecone similarity search");
 
-    // Retrieve the updated conversation history from the database
-    const dbMessages: DBMessage[] = await db.all(
-      "SELECT * FROM messages WHERE session_id = ? AND user_id = ? ORDER BY timestamp ASC",
-      session_id,
-      user_id
+    // Insert formatted restaurant data into MongoDB
+    console.time("Insert restaurant data into MongoDB");
+    const combinedContent = results
+      .map((result) => JSON.stringify(result, null, 2))
+      .join("\n\n");
+
+    const newMessage: Message = {
+      message_type: "restaurant_data",
+      content: combinedContent,
+      timestamp: new Date().toISOString(),
+    };
+
+    // Insert the combined message into MongoDB
+    await upsertConversationMessage(user_id, session_id, newMessage);
+    console.timeEnd("Insert restaurant data into MongoDB");
+
+    // Retrieve the updated conversation history from MongoDB
+    console.time("Retrieve conversation from MongoDB");
+    const client = await clientPromise;
+    const db = client.db("MunchLA");
+    const collection = db.collection("Conversations");
+    const conversation = await collection.findOne(
+      { _id: user_id },
+      { projection: { [`sessions.${session_id}.messages`]: 1 } }
     );
-
-    console.log(dbMessages);
+    const dbMessages: Message[] = conversation ? conversation.sessions[session_id]?.messages || [] : [];
+    console.timeEnd("Retrieve conversation from MongoDB");
 
     // Create a new message history instance for the current session
     const messageHistory = new ChatMessageHistory();
-    // Load messages into the LangChain history using specific message types
-    dbMessages.forEach((dbMessage: DBMessage) => {
-      if (
-        dbMessage.message_type === "human_message_no_prompt" ||
-        dbMessage.message_type === "restaurant_data"
-      ) {
+
+    console.time("Load messages into history");
+    dbMessages.forEach((dbMessage: Message) => {
+      if (dbMessage.message_type === "human_message_no_prompt") {
         messageHistory.addMessage(new HumanMessage(dbMessage.content));
-      } else if (dbMessage.message_type === "ai_message") {
-        messageHistory.addMessage(new AIMessage(dbMessage.content));
+      } else if (dbMessage.message_type === "ai_message" || dbMessage.message_type === "restaurant_data") {
+        messageHistory.addMessage(new AIMessage(JSON.stringify(dbMessage.content)));
       }
     });
+    console.timeEnd("Load messages into history");
 
+    console.time("Generate AI response");
     const withHistory = new RunnableWithMessageHistory({
       runnable: chain,
       getMessageHistory: () => messageHistory,
@@ -221,22 +217,32 @@ export async function POST(req: Request): Promise<Response> {
       historyMessagesKey: "history",
     });
 
-    // Generate the AI response using LangChain with memory
     const config: RunnableConfig = { configurable: { sessionId: session_id } };
     const aiResponse = await withHistory.invoke(
       { inputText: message, history: messageHistory },
       config
     );
-    // Insert the new AI message into the database
-    await db.run(
-      "INSERT INTO messages (user_id, session_id, message_type, content, timestamp) VALUES (?, ?, ?, ?, ?)",
-      user_id,
-      session_id,
-      "ai_message",
-      aiResponse,
-      new Date().toISOString()
-    );
+    console.timeEnd("Generate AI response");
 
+    console.time("Insert human message into MongoDB");
+    const humanMessage: Message = {
+      message_type: "human_message_no_prompt",
+      content: message,
+      timestamp: new Date().toISOString(),
+    };
+    await upsertConversationMessage(user_id, session_id, humanMessage);
+    console.timeEnd("Insert human message into MongoDB");
+
+    console.time("Insert AI message into MongoDB");
+    const aiMessage: Message = {
+      message_type: "ai_message",
+      content: aiResponse,
+      timestamp: new Date().toISOString(),
+    };
+    await upsertConversationMessage(user_id, session_id, aiMessage);
+    console.timeEnd("Insert AI message into MongoDB");
+
+    console.timeEnd("Total execution time");
     return NextResponse.json({ aiResponse }, { status: 200 });
   } catch (error) {
     console.error("Error handling message data:", error);
