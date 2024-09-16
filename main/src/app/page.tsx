@@ -27,12 +27,10 @@ export default function Home() {
   // }, []);
 
   // return isMobile ? <ChatPageMobile /> : <ChatPage />;
-  return(
-    <div style={{height: '100vh'}}>
+  return (
+    <div style={{ height: "100vh" }}>
       {/* <LandingPage></LandingPage> */}
       <ChatPage></ChatPage>
     </div>
-    
   );
-  
 }
