@@ -226,8 +226,8 @@ export default function MunchLAChatbot() {
           <div className="w-8 h-8 rounded-full bg-gray-300 dark:bg-gray-600" />
         </header>
 
-        <main className="flex-1 overflow-auto p-4 pb-24">
-          <div className="max-w-4xl mx-auto space-y-8">
+        <main className="flex-1 overflow-auto p-4 pb-24 flex items-center justify-center">
+          <div className="max-w-4xl w-full space-y-8">
             {isFirstInput ? (
               <>
                 <h1 className="text-4xl font-bold text-left">
