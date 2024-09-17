@@ -56,7 +56,7 @@ export default function LandingPage() {
     {
       prompt: "What's a top spot for chicken lovers in the Los Angeles area?",
       response:
-        "McDonald's is a popular fast-food chain throughout the Los Angeles area, known for its iconic offerings like the Big Mac and World Famous Fries. With numerous locations across the city, it provides a convenient and consistent dining option for both locals and visitors.",
+        "Canes' is a popular fast-food chain throughout the Los Angeles area, known for its iconic offerings like the Caniac Combo. With numerous locations across the city, it provides a convenient and consistent dining option for both locals and visitors.",
       image: "/images/canes.png",
     },
     {
@@ -66,16 +66,16 @@ export default function LandingPage() {
       image: "/images/porch-la.jpeg",
     },
     {
-      prompt: "Recommend a romantic Italian restaurant in Beverly Hills",
+      prompt: "Recommend a romantic Italian restaurant in Los Angeles",
       response:
-        "Il Cielo in Beverly Hills offers a truly romantic Italian dining experience. The restaurant features a beautiful garden setting with twinkling lights, creating an intimate atmosphere. Their handmade pasta dishes and extensive wine list make for an unforgettable date night.",
-      image: "/images/italian-restaurant.jpg",
+        "Bestia in Los Angeles is an excellent choice for a romantic Italian dining experience. Known for its industrial-chic setting, it offers a cozy yet vibrant atmosphere. The menu boasts a variety of house-made charcuterie, pastas, and wood-fired pizzas, paired with a diverse selection of wines and cocktails, making it perfect for a memorable date night.",
+      image: "/images/bestia.jpg",
     },
     {
       prompt: "What's the best place for Korean BBQ in Koreatown?",
       response:
-        "Park's BBQ in Koreatown is widely regarded as one of the best Korean BBQ restaurants in Los Angeles. Known for its high-quality meat selections and attentive service, it offers an authentic Korean grilling experience. Don't miss their marinated short ribs (galbi) and beef brisket.",
-      image: "/images/korean-bbq.jpg",
+        "Quarter's BBQ in Koreatown is widely regarded as one of the best Korean BBQ restaurants in Los Angeles. Known for its high-quality meat selections and attentive service, it offers an authentic Korean grilling experience. Don't miss their marinated short ribs (galbi) and beef brisket.",
+      image: "/images/kbbq.jpg",
     },
   ];
 
