@@ -3,6 +3,8 @@
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Button } from "@/components/ui/button";
+import Link from "next/link";
+import Image from "next/image";
 import {
   UtensilsIcon,
   SunIcon,
@@ -46,34 +48,34 @@ export default function LandingPage() {
 
   const chatPosts = [
     {
-      prompt: "Show me the best place for authentic ramen in Little Tokyo",
+      prompt: "Where is a high-end sushi places in Los Angeles",
       response:
-        "Daikokuya in Little Tokyo is renowned for its authentic ramen. Their rich tonkotsu broth and perfectly chewy noodles create a memorable dining experience. The intimate setting and often long wait times speak to its popularity and quality.",
-      image: "./green-pasta-FT-RECIPE0521-510d065cf45940fdb4e86b76000cfd80.jpg",
+        "Nobu Los Angeles offers a luxurious sushi experience with a globally renowned reputation for its high-quality ingredients and innovative dishes. The elegant ambiance and creative menu, featuring items like miso-marinated cod and yellowtail jalapeño, make it a top choice for sushi enthusiasts seeking both sophistication and exceptional flavors.",
+      image: "/images/nobu.jpg",
     },
     {
-      prompt: "What's a great vegan-friendly restaurant in Silver Lake?",
+      prompt: "What's a top spot for chicken lovers in the Los Angeles area?",
       response:
-        "Flore Vegan in Silver Lake is a standout choice for plant-based dining. They offer a diverse menu of comfort foods and brunch items, all 100% vegan. Their Buffalo Cauliflower Wings and the Reuben sandwich are local favorites.",
-      image: "./green-pasta-FT-RECIPE0521-510d065cf45940fdb4e86b76000cfd80.jpg",
+        "McDonald's is a popular fast-food chain throughout the Los Angeles area, known for its iconic offerings like the Big Mac and World Famous Fries. With numerous locations across the city, it provides a convenient and consistent dining option for both locals and visitors.",
+      image: "/images/canes.png",
     },
     {
-      prompt: "Where can I find the best fish tacos in Santa Monica?",
+      prompt: "What's a great French bistro with a great view in Los Angeles?",
       response:
-        "For the best fish tacos in Santa Monica, head to Tacos Punta Cabras. Their Baja-style fish tacos feature crispy, battered fish topped with cabbage slaw and a zesty crema. The beachside location adds to the authentic coastal experience.",
-      image: "/placeholder.svg?height=400&width=600",
+        "Porch in Los Angeles is a charming French bistro known for its delightful, traditional cuisine and cozy ambiance. With a menu that features classic dishes like croissants and quiches, it offers an authentic taste of France right in the heart of the city.",
+      image: "/images/porch-la.jpeg",
     },
     {
       prompt: "Recommend a romantic Italian restaurant in Beverly Hills",
       response:
         "Il Cielo in Beverly Hills offers a truly romantic Italian dining experience. The restaurant features a beautiful garden setting with twinkling lights, creating an intimate atmosphere. Their handmade pasta dishes and extensive wine list make for an unforgettable date night.",
-      image: "/placeholder.svg?height=400&width=600",
+      image: "/images/italian-restaurant.jpg",
     },
     {
       prompt: "What's the best place for Korean BBQ in Koreatown?",
       response:
         "Park's BBQ in Koreatown is widely regarded as one of the best Korean BBQ restaurants in Los Angeles. Known for its high-quality meat selections and attentive service, it offers an authentic Korean grilling experience. Don't miss their marinated short ribs (galbi) and beef brisket.",
-      image: "/placeholder.svg?height=400&width=600",
+      image: "/images/korean-bbq.jpg",
     },
   ];
 
@@ -148,9 +150,11 @@ export default function LandingPage() {
               </Button>
             </motion.div>
             <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
-              <Button className="bg-purple-600 hover:bg-purple-700 text-white">
-                Sign in
-              </Button>
+              <Link href="/login">
+                <Button className="bg-purple-600 hover:bg-purple-700 text-white">
+                  Sign in
+                </Button>
+              </Link>
             </motion.div>
           </nav>
         </motion.header>
@@ -193,9 +197,11 @@ export default function LandingPage() {
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.5, delay: 0.8 }}
               >
-                <Button className="bg-purple-600 hover:bg-purple-700 text-white text-lg px-6 py-2">
-                  Sign in
-                </Button>
+                <Link href="/login">
+                  <Button className="bg-purple-600 hover:bg-purple-700 text-white text-lg px-6 py-2">
+                    Sign in
+                  </Button>
+                </Link>
               </motion.div>
             </motion.div>
             <motion.div
@@ -214,10 +220,12 @@ export default function LandingPage() {
                     exit={{ opacity: 0, x: -300 }}
                     transition={{ type: "spring", stiffness: 300, damping: 30 }}
                   >
-                    <img
+                    <Image
                       src={chatPosts[currentIndex].image}
                       alt="Food"
-                      className="w-full h-full object-cover rounded-2xl"
+                      layout="fill"
+                      objectFit="cover"
+                      className="rounded-2xl"
                     />
                     <div className="absolute inset-x-4 bottom-4 bg-white dark:bg-gray-800 p-2 rounded-xl shadow-md max-w-[80%] max-h-[30%] overflow-y-auto">
                       <p className="text-xs md:text-sm font-semibold mb-1 text-purple-600 dark:text-purple-400">
