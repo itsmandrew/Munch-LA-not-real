@@ -18,9 +18,22 @@ export default function LandingPage() {
   const [isDarkMode, setIsDarkMode] = useState(false);
   const [currentIndex, setCurrentIndex] = useState(0);
 
+  useEffect(() => {
+    // Reset to light mode when component mounts
+    setIsDarkMode(false);
+    document.documentElement.classList.remove("dark");
+  }, []);
+
   const toggleDarkMode = () => {
-    setIsDarkMode(!isDarkMode);
-    document.documentElement.classList.toggle("dark");
+    setIsDarkMode((prev) => {
+      const newMode = !prev;
+      if (newMode) {
+        document.documentElement.classList.add("dark");
+      } else {
+        document.documentElement.classList.remove("dark");
+      }
+      return newMode;
+    });
   };
 
   const containerVariants = {
@@ -223,9 +236,9 @@ export default function LandingPage() {
                     <Image
                       src={chatPosts[currentIndex].image}
                       alt="Food"
-                      layout="fill"
-                      objectFit="cover"
-                      className="rounded-2xl"
+                      fill
+                      sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+                      className="rounded-2xl object-cover"
                     />
                     <div className="absolute inset-x-4 bottom-4 bg-white dark:bg-gray-800 p-2 rounded-xl shadow-md max-w-[80%] max-h-[30%] overflow-y-auto">
                       <p className="text-xs md:text-sm font-semibold mb-1 text-purple-600 dark:text-purple-400">
