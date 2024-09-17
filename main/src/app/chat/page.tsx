@@ -30,6 +30,12 @@ import {
   ChevronRightIcon,
   SendIcon,
 } from "lucide-react";
+import { Lexend } from "next/font/google";
+
+const lexend = Lexend({
+  subsets: ["latin"],
+  display: "swap",
+});
 
 type Message = {
   text: string;
@@ -44,7 +50,7 @@ type Conversation = {
 
 export default function MunchLAChatbot() {
   const [prompt, setPrompt] = useState("");
-  const [isDarkMode, setIsDarkMode] = useState(true);
+  const [isDarkMode, setIsDarkMode] = useState(false);
   const [isFirstInput, setIsFirstInput] = useState(true);
   const [currentConversation, setCurrentConversation] =
     useState<Conversation | null>(null);
@@ -135,16 +141,9 @@ export default function MunchLAChatbot() {
   ];
 
   return (
-    <div className="flex h-screen bg-white dark:bg-gray-900 text-gray-900 dark:text-white font-lexend">
-      <style jsx global>{`
-        @import url("https://fonts.googleapis.com/css2?family=Lexend:wght@300;400;500;600;700&display=swap");
-        :root {
-          --font-lexend: "Lexend", sans-serif;
-        }
-        body {
-          font-family: var(--font-lexend);
-        }
-      `}</style>
+    <div
+      className={`flex h-screen bg-white dark:bg-gray-900 text-gray-900 dark:text-white ${lexend.className}`}
+    >
       {/* Sidebar */}
       <aside
         className={`bg-gray-100 dark:bg-gray-800 border-r border-gray-200 dark:border-gray-700 flex flex-col transition-all duration-300 ease-in-out ${
@@ -227,7 +226,7 @@ export default function MunchLAChatbot() {
         </header>
 
         <main className="flex-1 overflow-auto p-4 pb-24 flex items-center justify-center">
-          <div className="max-w-4xl w-full space-y-8">
+          <div className="max-w-4xl w-full space-y-8 ">
             {isFirstInput ? (
               <>
                 <h1 className="text-4xl font-bold text-left">
@@ -236,7 +235,7 @@ export default function MunchLAChatbot() {
                   </span>
                 </h1>
                 <p className="text-xl text-gray-600 dark:text-gray-400 text-left">
-                  How can I help you discover LA's culinary delights today?
+                  How can I help you discover LA&apos;s culinary delights today?
                 </p>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">

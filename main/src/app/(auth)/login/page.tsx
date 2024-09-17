@@ -7,21 +7,52 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { UtensilsIcon } from "lucide-react";
+import { signIn } from "next-auth/react";
 
 export default function LoginPage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
   const router = useRouter();
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    console.log("Login attempted with:", email, password);
-    router.push("/dashboard");
+    setIsLoading(true);
+    try {
+      const result = await signIn("credentials", {
+        redirect: false,
+        email,
+        password,
+      });
+      if (result?.error) {
+        console.error("Error signing in:", result.error);
+      } else {
+        router.push("/chat");
+      }
+    } catch (error) {
+      console.error("Error signing in:", error);
+    } finally {
+      setIsLoading(false);
+    }
   };
 
-  const handleGoogleSignIn = () => {
-    console.log("Google sign-in attempted");
-    router.push("/dashboard");
+  const handleGoogleSignIn = async () => {
+    setIsLoading(true);
+    try {
+      const result = await signIn("google", {
+        callbackUrl: "/chat",
+        redirect: false,
+      });
+      if (result?.error) {
+        console.error("Error signing in with Google:", result.error);
+      } else if (result?.url) {
+        router.push(result.url);
+      }
+    } catch (error) {
+      console.error("Error signing in with Google:", error);
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
@@ -34,10 +65,10 @@ export default function LoginPage() {
       <div className="text-center">
         <UtensilsIcon className="mx-auto h-12 w-12 text-purple-600 dark:text-purple-400" />
         <h2 className="mt-6 text-3xl font-bold text-gray-900 dark:text-white">
-          Welcome back to MunchLA
+          Welcome to MunchLA
         </h2>
         <p className="mt-2 text-sm text-gray-600 dark:text-gray-400">
-          Sign in to continue your culinary journey
+          Sign in to start your culinary journey
         </p>
       </div>
       <form onSubmit={handleSubmit} className="mt-8 space-y-6">
@@ -85,9 +116,10 @@ export default function LoginPage() {
         <div>
           <Button
             type="submit"
+            disabled={isLoading}
             className="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-purple-600 hover:bg-purple-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-purple-500"
           >
-            Sign in
+            {isLoading ? "Signing in..." : "Sign in"}
           </Button>
         </div>
       </form>
@@ -108,6 +140,7 @@ export default function LoginPage() {
           <Button
             type="button"
             onClick={handleGoogleSignIn}
+            disabled={isLoading}
             className="w-full flex items-center justify-center px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-purple-500 dark:bg-gray-700 dark:text-gray-300 dark:border-gray-600 dark:hover:bg-gray-600"
           >
             <svg
@@ -133,7 +166,7 @@ export default function LoginPage() {
               />
               <path d="M1 1h22v22H1z" fill="none" />
             </svg>
-            Continue with Google
+            {isLoading ? "Signing in..." : "Continue with Google"}
           </Button>
         </div>
       </div>
