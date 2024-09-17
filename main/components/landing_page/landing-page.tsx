@@ -97,7 +97,7 @@ export default function LandingPage() {
 
   return (
     <motion.div
-      className={`min-h-screen flex flex-col ${isDarkMode ? "dark" : ""}`}
+      className={`h-screen flex flex-col ${isDarkMode ? "dark" : ""}`}
       initial="hidden"
       animate="visible"
       variants={containerVariants}
@@ -109,11 +109,15 @@ export default function LandingPage() {
         }
         body {
           font-family: var(--font-lexend);
+          margin: 0;
+          padding: 0;
+          height: 100vh;
+          overflow: hidden;
         }
       `}</style>
-      <div className="bg-white dark:bg-gray-900 text-gray-900 dark:text-white font-lexend flex-grow flex flex-col">
+      <div className="bg-white dark:bg-gray-900 text-gray-900 dark:text-white font-lexend flex flex-col h-full">
         <motion.header
-          className="flex justify-between items-center p-4 sticky top-0 bg-white dark:bg-gray-900 z-10"
+          className="flex justify-between items-center p-4 bg-white dark:bg-gray-900 z-10"
           variants={itemVariants}
         >
           <motion.div
@@ -151,100 +155,102 @@ export default function LandingPage() {
           </nav>
         </motion.header>
 
-        <main className="container mx-auto px-4 py-8 flex-grow flex flex-col md:flex-row items-center">
-          <motion.div
-            className="w-full md:w-1/2 pr-0 md:pr-8 mb-8 md:mb-0"
-            variants={itemVariants}
-          >
-            <motion.h1
-              className="text-5xl md:text-7xl font-bold mb-4 bg-clip-text text-transparent bg-gradient-to-r from-purple-600 to-yellow-400 dark:from-purple-400 dark:to-yellow-300"
-              initial={{ opacity: 0, y: -20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.5, delay: 0.2 }}
-            >
-              MunchLA
-            </motion.h1>
-            <motion.h2
-              className="text-2xl md:text-3xl font-semibold mb-4"
-              initial={{ opacity: 0, y: -20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.5, delay: 0.4 }}
-            >
-              Supercharge your culinary adventures
-            </motion.h2>
-            <motion.p
-              className="text-lg md:text-xl mb-8"
-              initial={{ opacity: 0, y: -20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.5, delay: 0.6 }}
-            >
-              Chat to start discovering, planning, and exploring LA's vibrant
-              food scene with AI
-            </motion.p>
+        <main className="flex-grow flex flex-col md:flex-row items-center justify-center px-4 overflow-hidden">
+          <div className="w-full max-w-6xl mx-auto flex flex-col md:flex-row items-center justify-center gap-8">
             <motion.div
-              whileHover={{ scale: 1.05 }}
-              whileTap={{ scale: 0.95 }}
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.5, delay: 0.8 }}
+              className="w-full md:w-1/2 max-w-md"
+              variants={itemVariants}
             >
-              <Button className="bg-purple-600 hover:bg-purple-700 text-white text-lg px-8 py-3">
-                Sign in
-              </Button>
+              <motion.h1
+                className="text-4xl md:text-5xl lg:text-6xl font-bold mb-4 bg-clip-text text-transparent bg-gradient-to-r from-purple-600 to-yellow-400 dark:from-purple-400 dark:to-yellow-300"
+                initial={{ opacity: 0, y: -20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.5, delay: 0.2 }}
+              >
+                MunchLA
+              </motion.h1>
+              <motion.h2
+                className="text-xl md:text-2xl font-semibold mb-4"
+                initial={{ opacity: 0, y: -20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.5, delay: 0.4 }}
+              >
+                Supercharge your culinary adventures
+              </motion.h2>
+              <motion.p
+                className="text-base md:text-lg mb-6"
+                initial={{ opacity: 0, y: -20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.5, delay: 0.6 }}
+              >
+                Chat to start discovering, planning, and exploring LA's vibrant
+                food scene with AI
+              </motion.p>
+              <motion.div
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.5, delay: 0.8 }}
+              >
+                <Button className="bg-purple-600 hover:bg-purple-700 text-white text-lg px-6 py-2">
+                  Sign in
+                </Button>
+              </motion.div>
             </motion.div>
-          </motion.div>
-          <motion.div
-            className="w-full md:w-1/2"
-            variants={itemVariants}
-            whileHover={{ scale: 1.02 }}
-            transition={{ type: "spring", stiffness: 300 }}
-          >
-            <div className="relative w-full aspect-square rounded-2xl overflow-hidden shadow-lg">
-              <AnimatePresence initial={false}>
-                <motion.div
-                  key={currentIndex}
-                  className="absolute inset-0"
-                  initial={{ opacity: 0, x: 300 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  exit={{ opacity: 0, x: -300 }}
-                  transition={{ type: "spring", stiffness: 300, damping: 30 }}
+            <motion.div
+              className="w-full md:w-1/2 max-w-md h-[40vh] md:h-[50vh]"
+              variants={itemVariants}
+              whileHover={{ scale: 1.02 }}
+              transition={{ type: "spring", stiffness: 300 }}
+            >
+              <div className="relative w-full h-full rounded-2xl overflow-hidden shadow-lg">
+                <AnimatePresence initial={false}>
+                  <motion.div
+                    key={currentIndex}
+                    className="absolute inset-0"
+                    initial={{ opacity: 0, x: 300 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    exit={{ opacity: 0, x: -300 }}
+                    transition={{ type: "spring", stiffness: 300, damping: 30 }}
+                  >
+                    <img
+                      src={chatPosts[currentIndex].image}
+                      alt="Food"
+                      className="w-full h-full object-cover rounded-2xl"
+                    />
+                    <div className="absolute inset-x-4 bottom-4 bg-white dark:bg-gray-800 p-2 rounded-xl shadow-md max-w-[80%] max-h-[30%] overflow-y-auto">
+                      <p className="text-xs md:text-sm font-semibold mb-1 text-purple-600 dark:text-purple-400">
+                        {chatPosts[currentIndex].prompt}
+                      </p>
+                      <p className="text-xs line-clamp-2 md:line-clamp-3">
+                        {chatPosts[currentIndex].response}
+                      </p>
+                    </div>
+                  </motion.div>
+                </AnimatePresence>
+                <button
+                  className="absolute top-1/2 left-2 transform -translate-y-1/2 text-white hover:text-purple-600 dark:hover:text-purple-400 transition-colors"
+                  onClick={prevSlide}
                 >
-                  <img
-                    src={chatPosts[currentIndex].image}
-                    alt="Food"
-                    className="w-full h-full object-cover rounded-2xl"
-                  />
-                  <div className="absolute inset-x-4 bottom-4 bg-white dark:bg-gray-800 p-4 rounded-xl shadow-md max-w-[90%]">
-                    <p className="text-base md:text-lg font-semibold mb-2 text-purple-600 dark:text-purple-400">
-                      {chatPosts[currentIndex].prompt}
-                    </p>
-                    <p className="text-sm md:text-base">
-                      {chatPosts[currentIndex].response}
-                    </p>
-                  </div>
-                </motion.div>
-              </AnimatePresence>
-              <button
-                className="absolute top-1/2 left-2 transform -translate-y-1/2 text-white hover:text-purple-600 dark:hover:text-purple-400 transition-colors"
-                onClick={prevSlide}
-              >
-                <ChevronLeftIcon className="h-8 w-8" />
-              </button>
-              <button
-                className="absolute top-1/2 right-2 transform -translate-y-1/2 text-white hover:text-purple-600 dark:hover:text-purple-400 transition-colors"
-                onClick={nextSlide}
-              >
-                <ChevronRightIcon className="h-8 w-8" />
-              </button>
-            </div>
-          </motion.div>
+                  <ChevronLeftIcon className="h-6 w-6" />
+                </button>
+                <button
+                  className="absolute top-1/2 right-2 transform -translate-y-1/2 text-white hover:text-purple-600 dark:hover:text-purple-400 transition-colors"
+                  onClick={nextSlide}
+                >
+                  <ChevronRightIcon className="h-6 w-6" />
+                </button>
+              </div>
+            </motion.div>
+          </div>
         </main>
 
         <motion.footer
-          className="py-4 text-center text-sm text-gray-600 dark:text-gray-400 mt-auto"
+          className="py-2 text-center text-xs text-gray-600 dark:text-gray-400"
           variants={itemVariants}
         >
-          <UtensilsIcon className="inline-block mr-2 h-4 w-4" />
+          <UtensilsIcon className="inline-block mr-1 h-3 w-3" />
           MunchLA &middot; Privacy & Terms
         </motion.footer>
       </div>
