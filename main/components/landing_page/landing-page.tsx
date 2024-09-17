@@ -10,8 +10,6 @@ import {
   SunIcon,
   MoonIcon,
   MoreVerticalIcon,
-  ChevronLeftIcon,
-  ChevronRightIcon,
 } from "lucide-react";
 
 export default function LandingPage() {
@@ -19,7 +17,6 @@ export default function LandingPage() {
   const [currentIndex, setCurrentIndex] = useState(0);
 
   useEffect(() => {
-    // Reset to light mode when component mounts
     setIsDarkMode(false);
     document.documentElement.classList.remove("dark");
   }, []);
@@ -61,7 +58,7 @@ export default function LandingPage() {
 
   const chatPosts = [
     {
-      prompt: "Where is a high-end sushi places in Los Angeles",
+      prompt: "Where is a high-end sushi place in Los Angeles",
       response:
         "Nobu Los Angeles offers a luxurious sushi experience with a globally renowned reputation for its high-quality ingredients and innovative dishes. The elegant ambiance and creative menu, featuring items like miso-marinated cod and yellowtail jalapeño, make it a top choice for sushi enthusiasts seeking both sophistication and exceptional flavors.",
       image: "/images/nobu.jpg",
@@ -92,19 +89,9 @@ export default function LandingPage() {
     },
   ];
 
-  const nextSlide = () => {
-    setCurrentIndex((prevIndex) => (prevIndex + 1) % chatPosts.length);
-  };
-
-  const prevSlide = () => {
-    setCurrentIndex(
-      (prevIndex) => (prevIndex - 1 + chatPosts.length) % chatPosts.length
-    );
-  };
-
   useEffect(() => {
     const interval = setInterval(() => {
-      nextSlide();
+      setCurrentIndex((prevIndex) => (prevIndex + 1) % chatPosts.length);
     }, 5000);
 
     return () => clearInterval(interval);
@@ -164,7 +151,7 @@ export default function LandingPage() {
             </motion.div>
             <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
               <Link href="/login">
-                <Button className="bg-purple-600 hover:bg-purple-700 text-white">
+                <Button className="bg-purple-600 hover:bg-purple-700 text-white rounded-full">
                   Sign in
                 </Button>
               </Link>
@@ -179,7 +166,7 @@ export default function LandingPage() {
               variants={itemVariants}
             >
               <motion.h1
-                className="text-4xl md:text-5xl lg:text-6xl font-bold mb-4 bg-clip-text text-transparent bg-gradient-to-r from-purple-600 to-yellow-400 dark:from-purple-400 dark:to-yellow-300"
+                className="text-5xl md:text-6xl lg:text-7xl font-bold mb-4 bg-clip-text text-transparent bg-gradient-to-r from-purple-600 to-yellow-400 dark:from-purple-400 dark:to-yellow-300"
                 initial={{ opacity: 0, y: -20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.5, delay: 0.2 }}
@@ -187,7 +174,7 @@ export default function LandingPage() {
                 MunchLA
               </motion.h1>
               <motion.h2
-                className="text-xl md:text-2xl font-semibold mb-4"
+                className="text-2xl md:text-3xl font-semibold mb-4"
                 initial={{ opacity: 0, y: -20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.5, delay: 0.4 }}
@@ -195,7 +182,7 @@ export default function LandingPage() {
                 Supercharge your culinary adventures
               </motion.h2>
               <motion.p
-                className="text-base md:text-lg mb-6"
+                className="text-lg md:text-xl mb-6"
                 initial={{ opacity: 0, y: -20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.5, delay: 0.6 }}
@@ -211,7 +198,7 @@ export default function LandingPage() {
                 transition={{ duration: 0.5, delay: 0.8 }}
               >
                 <Link href="/login">
-                  <Button className="bg-purple-600 hover:bg-purple-700 text-white text-lg px-6 py-2">
+                  <Button className="bg-purple-600 hover:bg-purple-700 text-white text-base px-6 py-2 rounded-full">
                     Sign in
                   </Button>
                 </Link>
@@ -239,6 +226,7 @@ export default function LandingPage() {
                       fill
                       sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
                       className="rounded-2xl object-cover"
+                      priority={currentIndex === 0}
                     />
                     <div className="absolute inset-x-4 bottom-4 bg-white dark:bg-gray-800 p-2 rounded-xl shadow-md max-w-[80%] max-h-[30%] overflow-y-auto">
                       <p className="text-xs md:text-sm font-semibold mb-1 text-purple-600 dark:text-purple-400">
@@ -250,18 +238,6 @@ export default function LandingPage() {
                     </div>
                   </motion.div>
                 </AnimatePresence>
-                <button
-                  className="absolute top-1/2 left-2 transform -translate-y-1/2 text-white hover:text-purple-600 dark:hover:text-purple-400 transition-colors"
-                  onClick={prevSlide}
-                >
-                  <ChevronLeftIcon className="h-6 w-6" />
-                </button>
-                <button
-                  className="absolute top-1/2 right-2 transform -translate-y-1/2 text-white hover:text-purple-600 dark:hover:text-purple-400 transition-colors"
-                  onClick={nextSlide}
-                >
-                  <ChevronRightIcon className="h-6 w-6" />
-                </button>
               </div>
             </motion.div>
           </div>
