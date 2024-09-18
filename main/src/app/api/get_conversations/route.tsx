@@ -1,27 +1,32 @@
 import { NextResponse } from "next/server";
 import clientPromise from "@/db/mongodb";
 
-// Type definitions for the request body and session preview
-interface RequestBody {
-  user_id: string;
-}
-
+// Type definitions for the session preview
 interface Session {
   session_id: string;
   conversation_preview: string;
   last_updated: string;
 }
 
-export async function POST(req: Request): Promise<Response> {
-  if (req.method !== "POST") {
+export async function GET(req: Request): Promise<Response> {
+  if (req.method !== "GET") {
     return NextResponse.json(
-      { error: "Only POST requests are allowed" },
+      { error: "Only GET requests are allowed" },
       { status: 405 }
     );
   }
 
   try {
-    const { user_id }: RequestBody = await req.json();
+    // Extract the user_id from the query parameters
+    const url = new URL(req.url);
+    const user_id = url.searchParams.get("user_id");
+
+    if (!user_id) {
+      return NextResponse.json(
+        { error: "User ID is required" },
+        { status: 400 }
+      );
+    }
 
     // Connect to MongoDB
     const client = await clientPromise;
