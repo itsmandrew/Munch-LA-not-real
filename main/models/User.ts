@@ -20,6 +20,12 @@ const UserSchema = new mongoose.Schema({
         type: Date,
         default: Date.now,
     },
+    lastLogin: {
+        type: Date,
+        default: Date.now,
+    },
+}, {
+    collection: 'users' // This sets the collection name
 });
 
 export default mongoose.models.User || mongoose.model('User', UserSchema);

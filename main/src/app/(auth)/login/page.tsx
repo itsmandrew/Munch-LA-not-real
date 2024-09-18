@@ -12,7 +12,7 @@ export default function Component() {
   const handleGoogleSignIn = async () => {
     setIsLoading(true);
     try {
-      await signIn("google", { callbackUrl: "/dashboard" });
+      await signIn("google", { callbackUrl: "/chat" });
     } catch (error) {
       console.error("Error signing in with Google:", error);
     } finally {
