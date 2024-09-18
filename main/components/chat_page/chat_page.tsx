@@ -30,6 +30,7 @@ import {
   ChevronRightIcon,
   SendIcon,
 } from "lucide-react";
+import fetchUserSessions from "@/api_callers/getters";
 
 type Message = {
   text: string;
@@ -42,6 +43,12 @@ type Conversation = {
   messages: Message[];
 };
 
+type Session = {
+  id: string;
+  conversation_preview: string;
+  last_updated: string;
+}
+
 export default function MunchLAChatbot() {
   const [prompt, setPrompt] = useState("");
   const [isDarkMode, setIsDarkMode] = useState(true);
@@ -53,6 +60,30 @@ export default function MunchLAChatbot() {
     { id: 2, title: "Food truck locations", messages: [] },
   ]);
   const [isSidebarExpanded, setIsSidebarExpanded] = useState(false);
+  const [sessions, setSessions] = useState<Session[]>([]);
+  const [userId, setUserId] = useState('1'); // as an example for now
+
+  
+  useEffect(() => {
+    const fetchSessions = async () => {
+      try {
+        const response = await fetchUserSessions(userId);
+        console.log(response);
+        if (!response) {
+          throw new Error(`Error: ${response.status}`);
+        }
+        const data: Session[] = response['sessions'];
+        console.log(data);
+        setSessions(data);
+      } catch (error) {
+        console.error("Failed to fetch sessions", error);
+      }
+    };
+
+    fetchSessions();
+  }, [])
+
+  // console.log('sessions', sessions['sessions']);
 
   useEffect(() => {
     if (isDarkMode) {
@@ -180,14 +211,14 @@ export default function MunchLAChatbot() {
             </div>
             <ScrollArea className="flex-grow p-4">
               <div className="space-y-2">
-                {conversations.map((conv) => (
+                {sessions.map((session) => (
                   <Button
-                    key={conv.id}
+                    key={session.id}
                     variant="ghost"
                     className="w-full justify-start text-sm"
-                    onClick={() => setCurrentConversation(conv)}
+                    // onClick={() => setCurrentConversation()}
                   >
-                    {conv.title}
+                    {session.conversation_preview}
                   </Button>
                 ))}
               </div>
