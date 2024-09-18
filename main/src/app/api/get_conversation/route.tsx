@@ -18,7 +18,6 @@ interface RequestBody {
   session_id: string;
 }
 
-
 export async function POST(req: Request): Promise<Response> {
   if (req.method !== "POST") {
     return NextResponse.json(
@@ -49,7 +48,11 @@ export async function POST(req: Request): Promise<Response> {
       { projection: { [`sessions.${session_id}.messages`]: 1 } }
     );
 
-    if (!conversation || !conversation.sessions || !conversation.sessions[session_id]) {
+    if (
+      !conversation ||
+      !conversation.sessions ||
+      !conversation.sessions[session_id]
+    ) {
       return NextResponse.json(
         { error: "No conversation history found" },
         { status: 404 }
@@ -85,9 +88,11 @@ export async function POST(req: Request): Promise<Response> {
       })
       .filter((message): message is Message => message !== undefined); // Filter out any undefined values
 
-
     // Return the filtered conversation
-    return NextResponse.json({ conversation: filteredMessages }, { status: 200 });
+    return NextResponse.json(
+      { conversation: filteredMessages },
+      { status: 200 }
+    );
   } catch (error) {
     console.error("Error fetching conversation data:", error);
     return NextResponse.json(
