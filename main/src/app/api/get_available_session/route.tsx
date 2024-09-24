@@ -1,24 +1,19 @@
-// Should call this when the page first loads up
-// Since it'll be the new message screen, you want to make sure you're getting the next available sessions
-
 import { NextRequest, NextResponse } from "next/server";
-import clientPromise from "@/db/mongodb";
+import dbConnect from "@/lib/mongodb";
+import Conversation from "@/models/Conversation";
 
-interface RequestBody {
+// Interface for request parameters
+interface RequestParams {
   user_id: string;
 }
 
-export async function POST(req: NextRequest): Promise<NextResponse> {
-  if (req.method !== "POST") {
-    return NextResponse.json(
-      { error: "Only POST requests are allowed" },
-      { status: 405 }
-    );
-  }
-
+export async function GET(req: NextRequest): Promise<NextResponse> {
   try {
-    const { user_id }: RequestBody = await req.json();
+    // Extract query parameters from the URL
+    const { searchParams } = new URL(req.url);
+    const user_id = searchParams.get("user_id");
 
+    // Validate that user_id is provided
     if (!user_id) {
       return NextResponse.json(
         { error: "Missing user_id" },
@@ -26,25 +21,29 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
       );
     }
 
-    // Connect to MongoDB
-    const client = await clientPromise;
-    const db = client.db("MunchLA"); // Replace with your actual database name
-    const collection = db.collection("Conversations");
+    // Connect to MongoDB using Mongoose
+    await dbConnect();
 
-    // Retrieve the user document to get the current sessions
-    const userDocument = await collection.findOne({ _id: user_id });
-    
+    // Retrieve the user document using the Conversation model
+    const userDocument = await Conversation.findOne({ _id: user_id }).lean();
+
+    // If user doesn't exist or doesn't have any sessions, return session_id as 1
+    if (!userDocument || !userDocument.sessions || Object.keys(userDocument.sessions).length === 0) {
+      return NextResponse.json(
+        { next_session_id: 1 },
+        { status: 200 }
+      );
+    }
+
+    // Convert the Mongoose document to a plain JS object and retrieve the keys of the sessions object
+    const sessionIds = Object.keys(userDocument.sessions);
+
+    console.log('Session IDs:', sessionIds); // This will print just the session keys
 
     let nextSessionId = 1;
-    if (userDocument && userDocument.sessions) {
-      // Get the existing session IDs as numbers
-      const sessionIds = Object.keys(userDocument.sessions).map(Number);
-      console.log('ids', sessionIds);
-
-      // Find the first missing session_id starting from 1
-      while (sessionIds.includes(nextSessionId)) {
-        nextSessionId++;
-      }
+    // Find the first missing session_id starting from 1
+    while (sessionIds.includes(nextSessionId.toString())) {
+      nextSessionId++;
     }
 
     // Return the next available session ID

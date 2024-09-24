@@ -1,10 +1,12 @@
-"use client";
+'use client'
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
+import { motion, AnimatePresence } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Card } from "@/components/ui/card";
+import { Card, CardContent} from "@/components/ui/card";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -29,36 +31,102 @@ import {
   MoreHorizontalIcon,
   ChevronRightIcon,
   SendIcon,
+  Loader2Icon,
+  TrashIcon
 } from "lucide-react";
-import { Lexend } from "next/font/google";
+import { fetchUserSessions, fetchNextAvailableChatSession, fetchConversation} from "@/api_callers/getters";
+import { useSession } from "next-auth/react";
+import { sendMessage } from "@/api_callers/setters";
+import { RestaurantCard } from "@/components/restaurant_cards/restaurant_cards";
 
-const lexend = Lexend({
-  subsets: ["latin"],
-  display: "swap",
-});
+type Restaurant = {
+  name: string;
+  address: string;
+  rating: number;
+  price: string;
+  summary: string;
+};
 
 type Message = {
   text: string;
   isBot: boolean;
+  restaurants?: Restaurant[];
 };
 
 type Conversation = {
-  id: number;
+  id: string;
   title: string;
   messages: Message[];
 };
 
+type Session = {
+  id: string;
+  conversation_preview: string;
+  last_updated: string;
+}
+
 export default function MunchLAChatbot() {
   const [prompt, setPrompt] = useState("");
-  const [isDarkMode, setIsDarkMode] = useState(false);
+  const [isDarkMode, setIsDarkMode] = useState(true);
   const [isFirstInput, setIsFirstInput] = useState(true);
-  const [currentConversation, setCurrentConversation] =
-    useState<Conversation | null>(null);
-  const [conversations, setConversations] = useState<Conversation[]>([
-    { id: 1, title: "Restaurant recommendations", messages: [] },
-    { id: 2, title: "Food truck locations", messages: [] },
-  ]);
+  const [currentConversation, setCurrentConversation] = useState<Conversation | null>(null);
   const [isSidebarExpanded, setIsSidebarExpanded] = useState(false);
+  const [userSessions, setUserSessions] = useState<Session[]>([]);
+  const [userId, setUserId] = useState<string | null>(null);
+  const { data: loginInfo } = useSession();
+  const [currentChatSession, setCurrentChatSession] = useState<string | null>(null);
+  const [isLoading, setIsLoading] = useState(false);
+  const messagesEndRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  }, [currentConversation]);
+
+  useEffect(() => {
+    const fetchChatSession = async (userId: string) => {
+      try {
+        const session = await fetchNextAvailableChatSession(userId);
+        setCurrentChatSession(session);
+      } catch (error) {
+        console.error('Failed to fetch chat session', error);
+      }
+    };
+  
+    if (loginInfo?.user?.email) {
+      setUserId(loginInfo.user.email);
+      fetchChatSession(loginInfo.user.email);
+    }
+  }, [loginInfo]);
+
+  useEffect(() => {
+    const fetchSessions = async () => {
+      try {
+        if (!userId) {
+          return;
+        }
+  
+        const response = await fetchUserSessions(userId);
+  
+        if (!response) {
+          throw new Error(`Error: ${response.status}`);
+        }
+  
+        const data: any[] = response['sessions'];
+        let sessions: Session[] = [];
+        
+        sessions = data.map(item => ({
+            id: item.session_id,
+            conversation_preview: item.conversation_preview,
+            last_updated: item.last_updated,
+        }));
+        setUserSessions(sessions);
+      } catch (error) {
+        console.error("Failed to fetch sessions", error);
+      }
+    };
+  
+    fetchSessions();
+  }, [userId]);
 
   useEffect(() => {
     if (isDarkMode) {
@@ -68,43 +136,81 @@ export default function MunchLAChatbot() {
     }
   }, [isDarkMode]);
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (prompt.trim()) {
-      const newMessage: Message = { text: prompt, isBot: false };
-      let updatedConversation: Conversation;
-
-      if (currentConversation) {
-        updatedConversation = {
-          ...currentConversation,
-          messages: [...currentConversation.messages, newMessage],
-        };
-      } else {
-        updatedConversation = {
-          id: Date.now(),
-          title: prompt.slice(0, 30) + (prompt.length > 30 ? "..." : ""),
-          messages: [newMessage],
-        };
-        setConversations([updatedConversation, ...conversations]);
-      }
-
-      setCurrentConversation(updatedConversation);
-      setPrompt("");
+  useEffect(() => {
+    if (currentConversation){
       setIsFirstInput(false);
+    }
+  }, [currentConversation]);
+  
+  const handleSessionClick = async (sessionId: string) => {
+    if (!sessionId || !userId) return;
+    setCurrentChatSession(sessionId);
+    try {
+      const conversation = await fetchConversation(userId, sessionId);
+      const messages: Message[] = conversation.map(message => ({
+        text: message.message_type === 'ai_message'
+          ? message.content.general_response || ''
+          : message.content || '',
+        isBot: message.message_type === 'ai_message',
+        restaurants: message.message_type === 'ai_message' ? message.content.restaurants : undefined,
+      }));
+      
+      const conversationData: Conversation = {
+        id: sessionId,
+        title: `Chat Session ${sessionId}`,
+        messages,
+      };
+  
+      setCurrentConversation(conversationData);
+    } catch (error) {
+      console.error("Error fetching conversation:", error);
+    }
+  };
 
-      // Simulate bot response
-      setTimeout(() => {
-        const botResponse: Message = {
-          text: "I'm MunchLA's AI assistant. How can I help you find great food in LA?",
-          isBot: true,
-        };
-        setCurrentConversation((prev) => {
-          if (prev) {
-            return { ...prev, messages: [...prev.messages, botResponse] };
-          }
-          return prev;
-        });
-      }, 1000);
+  const handleRemoveSession = async (sessionId: string) => {
+    // Here you would typically call an API to remove the session
+    // For now, we'll just remove it from the local state
+    setUserSessions(prevSessions => prevSessions.filter(session => session.id !== sessionId));
+    
+    // If the removed session was the current one, clear the current conversation
+    if (currentChatSession === sessionId) {
+      setCurrentConversation(null);
+      setCurrentChatSession(null);
+      setIsFirstInput(true);
+    }
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+
+    if (!prompt.trim() || !userId || !currentChatSession) return;
+
+    setCurrentConversation(prevConversation => ({
+      id: prevConversation?.id || currentChatSession,
+      title: prevConversation?.title || 'New Conversation',
+      messages: [...(prevConversation?.messages || []), { text: prompt, isBot: false }],
+    }));
+
+    setIsLoading(true);
+    setPrompt('');
+    setIsFirstInput(false);
+
+    try {
+      const response = await sendMessage(userId, currentChatSession, prompt);
+      const { general_response, restaurants } = response['aiResponse'];
+
+      setCurrentConversation(prevConversation => ({
+        id: prevConversation?.id || currentChatSession,
+        title: prevConversation?.title || 'New Conversation',
+        messages: [
+          ...(prevConversation?.messages || []),
+          { text: general_response, isBot: true, restaurants: restaurants },
+        ],
+      }));
+    } catch (error) {
+      console.error("Error sending message:", error);
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -112,9 +218,25 @@ export default function MunchLAChatbot() {
     setIsDarkMode(!isDarkMode);
   };
 
-  const startNewConversation = () => {
+  const startNewConversation = async () => {
     setCurrentConversation(null);
     setIsFirstInput(true);
+  
+    if (!userId) {
+      console.error("Invalid user ID");
+      return;
+    }
+  
+    try {
+      const response = await fetchNextAvailableChatSession(userId);
+      if (!response.ok) {
+        throw new Error(`Error fetching next session: ${response.status}`);
+      }
+      const data = await response.json();
+      setCurrentChatSession(data.next_session_id);
+    } catch (error) {
+      console.error("Failed to fetch next chat session", error);
+    }
   };
 
   const toggleSidebar = () => {
@@ -141,9 +263,16 @@ export default function MunchLAChatbot() {
   ];
 
   return (
-    <div
-      className={`flex h-screen bg-white dark:bg-gray-900 text-gray-900 dark:text-white ${lexend.className}`}
-    >
+    <div className="flex h-screen bg-white dark:bg-gray-900 text-gray-900 dark:text-white font-lexend">
+      <style jsx global>{`
+        @import url("https://fonts.googleapis.com/css2?family=Lexend:wght@300;400;500;600;700&display=swap");
+        :root {
+          --font-lexend: "Lexend", sans-serif;
+        }
+        body {
+          font-family: var(--font-lexend);
+        }
+      `}</style>
       {/* Sidebar */}
       <aside
         className={`bg-gray-100 dark:bg-gray-800 border-r border-gray-200 dark:border-gray-700 flex flex-col transition-all duration-300 ease-in-out ${
@@ -179,17 +308,37 @@ export default function MunchLAChatbot() {
             </div>
             <ScrollArea className="flex-grow p-4">
               <div className="space-y-2">
-                {conversations.map((conv) => (
-                  <Button
-                    key={conv.id}
-                    variant="ghost"
-                    className="w-full justify-start text-sm"
-                    onClick={() => setCurrentConversation(conv)}
-                  >
-                    {conv.title}
-                  </Button>
+                {userSessions.map((session) => (
+                  <div key={session.id} className="group relative flex items-center justify-between">
+                    <Button
+                      variant="ghost"
+                      className="w-full text-sm pr-8 flex items-center justify-between"
+                      onClick={() => handleSessionClick(session.id)}
+                    >
+                      {/* Limit the width of the truncated text */}
+                      <span className="truncate max-w-[180px]">{session.conversation_preview}</span>
+                      
+                      {/* The delete button section remains to the right */}
+                      <div className="flex items-center space-x-2">
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <Button variant="ghost" size="icon" className="h-8 w-8">
+                              <MoreHorizontalIcon className="h-4 w-4" />
+                            </Button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="end">
+                            <DropdownMenuItem onClick={() => handleRemoveSession(session.id)}>
+                              <TrashIcon className="mr-2 h-4 w-4" />
+                              <span>Delete</span>
+                            </DropdownMenuItem>
+                          </DropdownMenuContent>
+                        </DropdownMenu>
+                      </div>
+                    </Button>
+                  </div>
                 ))}
-              </div>
+            </div>
+
             </ScrollArea>
             <div className="p-4 mt-auto">
               <DropdownMenu>
@@ -222,20 +371,23 @@ export default function MunchLAChatbot() {
               <UtensilsIcon className="h-6 w-6" />
             </Button>
           </div>
-          <div className="w-8 h-8 rounded-full bg-gray-300 dark:bg-gray-600" />
+          <Avatar>
+            <AvatarImage src={loginInfo?.user?.image ?? ''} alt={loginInfo?.user?.name ?? 'User'} />
+            <AvatarFallback>{loginInfo?.user?.name?.[0] ?? 'U'}</AvatarFallback>
+          </Avatar>
         </header>
 
-        <main className="flex-1 overflow-auto p-4 pb-24 flex items-center justify-center">
-          <div className="max-w-4xl w-full space-y-8 ">
+        <main className="flex-1 overflow-auto p-4 pb-24">
+          <div className="max-w-4xl mx-auto space-y-8">
             {isFirstInput ? (
               <>
                 <h1 className="text-4xl font-bold text-left">
                   <span className="bg-clip-text text-transparent bg-gradient-to-r from-purple-600 to-yellow-400 dark:from-purple-400 dark:to-yellow-300">
-                    Hello, Los Angeles!
+                    Hello, {loginInfo?.user?.name ? loginInfo.user.name : "there"}!
                   </span>
                 </h1>
                 <p className="text-xl text-gray-600 dark:text-gray-400 text-left">
-                  How can I help you discover LA&apos;s culinary delights today?
+                  How can I help you discover LA's culinary delights today?
                 </p>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -258,25 +410,52 @@ export default function MunchLAChatbot() {
               </>
             ) : (
               <div className="space-y-6">
-                {currentConversation?.messages.map((message, index) => (
-                  <div
-                    key={index}
-                    className={`flex ${
-                      message.isBot ? "justify-start" : "justify-end"
-                    }`}
-                  >
-                    <div
-                      className={`inline-block p-3 rounded-lg max-w-[80%] ${
-                        message.isBot
-                          ? "bg-gray-200 dark:bg-gray-700 text-gray-900 dark:text-white"
-                          : "bg-purple-500 text-white"
-                      }`}
+                <AnimatePresence>
+                  {currentConversation?.messages?.map((message, index) => (
+                    <motion.div
+                      key={index}
+                      initial={{ opacity: 0, y: 20 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      exit={{ opacity: 0, y: -20 }}
+                      transition={{ duration: 0.3, delay: index * 0.1 }}
                     >
-                      {message.text}
+                      <div className={`flex ${message.isBot ? "justify-start" : "justify-end"}`}>
+                        <div className={`inline-block p-3 rounded-lg max-w-[80%] ${
+                          message.isBot
+                            ? "bg-gray-200 dark:bg-gray-700 text-gray-900 dark:text-white"
+                            : "bg-purple-500 text-white"
+                        }`}>
+                          <p>{message.text}</p>
+                        </div>
+                      </div>
+                      {message.restaurants && (
+                        <div className="mt-4 space-y-4">
+                          <AnimatePresence>
+                            {message.restaurants.map((restaurant, restaurantIndex) => (
+                              <motion.div
+                                key={restaurantIndex}
+                                initial={{ opacity: 0, y: 20 }}
+                                animate={{ opacity: 1, y: 0 }}
+                                exit={{ opacity: 0, y: -20 }}
+                                transition={{ duration: 0.3, delay: restaurantIndex * 0.1 }}
+                              >
+                                <RestaurantCard restaurant={restaurant} />
+                              </motion.div>
+                            ))}
+                          </AnimatePresence>
+                        </div>
+                      )}
+                    </motion.div>
+                  ))}
+                </AnimatePresence>
+                {isLoading && (
+                  <div className="flex justify-start">
+                    <div className="inline-block p-3 rounded-lg bg-gray-200 dark:bg-gray-700">
+                      <Loader2Icon className="h-6 w-6 animate-spin text-purple-500" />
                     </div>
                   </div>
-                ))}
-                {currentConversation &&
+                )}
+                {currentConversation && currentConversation.messages &&
                   currentConversation.messages.length > 0 && (
                     <div className="flex justify-start space-x-2">
                       <Button variant="ghost" size="icon">
@@ -296,6 +475,7 @@ export default function MunchLAChatbot() {
               </div>
             )}
           </div>
+          <div ref={messagesEndRef} />
         </main>
 
         <div className="p-4 bg-white dark:bg-gray-900">
@@ -328,8 +508,13 @@ export default function MunchLAChatbot() {
                 type="submit"
                 size="icon"
                 className="bg-purple-500 hover:bg-purple-600 text-white rounded-full h-10 w-10 flex items-center justify-center"
+                disabled={isLoading}
               >
-                <SendIcon className="h-5 w-5" />
+                {isLoading ? (
+                  <Loader2Icon className="h-5 w-5 animate-spin" />
+                ) : (
+                  <SendIcon className="h-5 w-5" />
+                )}
               </Button>
             </div>
           </form>
