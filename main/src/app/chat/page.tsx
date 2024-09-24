@@ -229,11 +229,12 @@ export default function MunchLAChatbot() {
   
     try {
       const response = await fetchNextAvailableChatSession(userId);
-      if (!response.ok) {
+      if (!response) {
         throw new Error(`Error fetching next session: ${response.status}`);
       }
-      const data = await response.json();
-      setCurrentChatSession(data.next_session_id);
+      // const data = await response.json();
+      console.log('next sesh', response);
+      setCurrentChatSession(response);
     } catch (error) {
       console.error("Failed to fetch next chat session", error);
     }

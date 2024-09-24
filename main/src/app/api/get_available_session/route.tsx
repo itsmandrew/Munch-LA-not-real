@@ -46,9 +46,11 @@ export async function GET(req: NextRequest): Promise<NextResponse> {
       nextSessionId++;
     }
 
+    console.log(nextSessionId);
+
     // Return the next available session ID
     return NextResponse.json(
-      { next_session_id: nextSessionId },
+      { next_session_id: String(nextSessionId) },
       { status: 200 }
     );
   } catch (error) {
