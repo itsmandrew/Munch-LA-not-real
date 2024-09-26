@@ -1,35 +1,34 @@
 import { NextResponse } from "next/server";
-import clientPromise from "@/db/mongodb";
+import dbConnect from "@/lib/mongodb";
+import Conversation from "@/models/Conversation";
 
-// Type definitions for the request body and session preview
-interface RequestBody {
-  user_id: string;
-}
-
+// Type definitions for the session preview
 interface Session {
   session_id: string;
   conversation_preview: string;
   last_updated: string;
 }
 
-export async function POST(req: Request): Promise<Response> {
-  if (req.method !== "POST") {
-    return NextResponse.json(
-      { error: "Only POST requests are allowed" },
-      { status: 405 }
-    );
-  }
-
+export async function GET(req: Request): Promise<Response> {
   try {
-    const { user_id }: RequestBody = await req.json();
+    // Get the URL and search parameters
+    const { searchParams } = new URL(req.url);
+
+    // Retrieve the user_id from the query parameters
+    const user_id = searchParams.get("user_id");
+
+    if (!user_id) {
+      return NextResponse.json(
+        { error: "user_id query parameter is required" },
+        { status: 400 }
+      );
+    }
 
     // Connect to MongoDB
-    const client = await clientPromise;
-    const db = client.db("MunchLA");
-    const collection = db.collection("Conversations");
+    await dbConnect();
 
-    // Retrieve the user document to get the current sessions
-    const userDocument = await collection.findOne({ _id: user_id });
+    // Retrieve the user document to get the current sessions using `.lean()`
+    const userDocument = await Conversation.findOne({ _id: user_id }).lean(); // <-- Add `.lean()` here
 
     if (!userDocument || !userDocument.sessions) {
       return NextResponse.json(
@@ -38,26 +37,27 @@ export async function POST(req: Request): Promise<Response> {
       );
     }
 
+
     // Process each session to return the session_id and the general_response as the conversation_preview
-    const sessions: Session[] = Object.entries(userDocument.sessions)
-      .map(([sessionId, sessionData]: [string, any]) => {
+    const sessions: Session[] = [];
+    Object.entries(userDocument.sessions).forEach(([sessionId, sessionData]: [string, any]) => {
+      // Extract the general_response from the message preview
+      const generalResponse = sessionData.messages?.find(
+        (msg: any) => msg.message_type === "ai_message"
+      )?.content.general_response || "No AI messages yet";
 
-        // Extract the general_response from the message preview
-        const generalResponse = sessionData.messages?.find(
-          (msg: any) => msg.message_type === "ai_message"
-        )?.content.general_response || "No AI messages yet";
+      // Push the session details into the sessions array
+      sessions.push({
+        session_id: sessionId,
+        conversation_preview: generalResponse,
+        last_updated: sessionData.last_updated || new Date().toISOString(),
+      });
+    });
 
-        // Return the session_id, conversation_preview, and last_updated timestamp
-        return {
-          session_id: sessionId,
-          conversation_preview: generalResponse,
-          last_updated: sessionData.last_updated || new Date().toISOString(),
-        };
-      })
-      // Sort the sessions by last_updated, newest first
-      .sort((a: Session, b: Session) =>
-        new Date(b.last_updated).getTime() - new Date(a.last_updated).getTime()
-      );
+    // Sort the sessions by last_updated, newest first
+    sessions.sort((a: Session, b: Session) =>
+      new Date(b.last_updated).getTime() - new Date(a.last_updated).getTime()
+    );
 
     // Return the list of sessions with their conversation previews
     return NextResponse.json({ sessions }, { status: 200 });

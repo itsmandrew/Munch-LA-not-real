@@ -20,7 +20,8 @@ import { JsonOutputFunctionsParser } from "langchain/output_parsers";
 import { Pinecone } from "@pinecone-database/pinecone";
 import { OpenAIEmbeddings } from "@langchain/openai";
 import { PineconeStore } from "@langchain/pinecone";
-import clientPromise from "@/db/mongodb";
+import dbConnect from "@/lib/mongodb";
+import Conversation from "@/models/Conversation";
 
 // Type definitions for the request body and database message
 interface RequestBody {
@@ -104,29 +105,17 @@ async function upsertConversationMessage(user_id: string, session_id: string, ne
   const currentTime = new Date().toISOString();
 
   try {
-    const client = await clientPromise;
-    const db = client.db("MunchLA");
+    // Connect to MongoDB
+    await dbConnect();
 
     // Update or create the user's document and set the last_updated field
-    await db.collection("Conversations").updateOne(
+    await Conversation.updateOne(
       { _id: user_id },
       {
         $set: {
-          [`sessions.${session_id}.messages`]: (
-            await db.collection("Conversations").findOne({ _id: user_id })
-          )?.sessions?.[session_id]?.messages || [],
           [`sessions.${session_id}.last_updated`]: currentTime, // Set last_updated to the current time
-        }
-      },
-      { upsert: true }
-    );
-
-    // Update the session with the new message and update the last_updated field
-    await db.collection("Conversations").updateOne(
-      { _id: user_id },
-      {
+        },
         $push: { [`sessions.${session_id}.messages`]: newMessage },
-        $set: { [`sessions.${session_id}.last_updated`]: currentTime }, // Update last_updated when a new message is added
       },
       { upsert: true }
     );
@@ -149,6 +138,7 @@ export async function POST(req: Request): Promise<Response> {
     console.time("Total execution time");
     console.time("Parse request body");
     const { user_id, session_id, message }: RequestBody = await req.json();
+    console.log(user_id, session_id, message);
     console.timeEnd("Parse request body");
 
     if (!user_id || !session_id || !message) {
@@ -186,14 +176,12 @@ export async function POST(req: Request): Promise<Response> {
 
     // Retrieve the updated conversation history from MongoDB
     console.time("Retrieve conversation from MongoDB");
-    const client = await clientPromise;
-    const db = client.db("MunchLA");
-    const collection = db.collection("Conversations");
-    const conversation = await collection.findOne(
+    const conversation = await Conversation.findOne(
       { _id: user_id },
-      { projection: { [`sessions.${session_id}.messages`]: 1 } }
-    );
-    const dbMessages: Message[] = conversation ? conversation.sessions[session_id]?.messages || [] : [];
+      { [`sessions.${session_id}.messages`]: 1, _id: 0 }
+    ).exec();
+
+    const dbMessages: Message[] = conversation ? conversation.sessions.get(session_id)?.messages || [] : [];
     console.timeEnd("Retrieve conversation from MongoDB");
 
     // Create a new message history instance for the current session
@@ -207,7 +195,9 @@ export async function POST(req: Request): Promise<Response> {
         messageHistory.addMessage(new AIMessage(JSON.stringify(dbMessage.content)));
       }
     });
+    
     console.timeEnd("Load messages into history");
+
 
     console.time("Generate AI response");
     const withHistory = new RunnableWithMessageHistory({

@@ -1,8 +1,8 @@
-// Call this whenever the user clicks on a conversation, this will load that conversation
-
 import { NextRequest, NextResponse } from "next/server";
-import clientPromise from "@/db/mongodb";
+import dbConnect from "@/lib/mongodb";
+import Conversation from "@/models/Conversation";
 
+// Type definitions for AI message content and message
 interface AIMessageContent {
   general_response: string;
   restaurants: any[]; // Replace `any` with the appropriate type if available
@@ -13,23 +13,14 @@ interface Message {
   content: string | AIMessageContent;
 }
 
-interface RequestBody {
-  user_id: string;
-  session_id: string;
-}
-
-export async function POST(req: Request): Promise<Response> {
-  if (req.method !== "POST") {
-    return NextResponse.json(
-      { error: "Only POST requests are allowed" },
-      { status: 405 }
-    );
-  }
-
+export async function GET(req: Request): Promise<Response> {
   try {
-    // Parse query parameters
-    const { user_id, session_id }: RequestBody = await req.json();
+    // Parse query parameters from the URL
+    const { searchParams } = new URL(req.url);
+    const user_id = searchParams.get("user_id");
+    const session_id = searchParams.get("session_id");
 
+    // Validate that user_id and session_id are provided
     if (!user_id || !session_id) {
       return NextResponse.json(
         { error: "Missing user_id or session_id" },
@@ -38,20 +29,20 @@ export async function POST(req: Request): Promise<Response> {
     }
 
     // Connect to MongoDB
-    const client = await clientPromise;
-    const db = client.db("MunchLA");
-    const collection = db.collection("Conversations");
+    await dbConnect();
 
-    // Retrieve the conversation history from MongoDB
-    const conversation = await collection.findOne(
+    // Retrieve the conversation history using Mongoose and use `.lean()` to return a plain JS object
+    const conversation = await Conversation.findOne(
       { _id: user_id },
-      { projection: { [`sessions.${session_id}.messages`]: 1 } }
-    );
+      { [`sessions.${session_id}.messages`]: 1 }
+    ).lean();
+
+    console.log('here', conversation);
 
     if (
       !conversation ||
       !conversation.sessions ||
-      !conversation.sessions[session_id]
+      !conversation.sessions[session_id] // Change to array/object syntax with `.lean()`
     ) {
       return NextResponse.json(
         { error: "No conversation history found" },
@@ -59,9 +50,10 @@ export async function POST(req: Request): Promise<Response> {
       );
     }
 
+    // Extract messages from the session
     const messages: Message[] = conversation.sessions[session_id].messages;
 
-    // Filter and transform messages
+    // Filter and transform messages based on the type
     const filteredMessages: Message[] = messages
       .filter(
         (message: any) =>
@@ -83,8 +75,7 @@ export async function POST(req: Request): Promise<Response> {
             },
           };
         }
-        // Ensuring all cases return a value
-        return undefined;
+        return undefined; // Ensure we always return a value
       })
       .filter((message): message is Message => message !== undefined); // Filter out any undefined values
 
