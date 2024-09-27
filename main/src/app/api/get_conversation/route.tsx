@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import dbConnect from "@/lib/mongodb";
 import Conversation from "@/models/Conversation";
+import { authOptions } from "../auth/[...nextauth]/route";
+import { getServerSession } from "next-auth";
 
 // Type definitions for AI message content and message
 interface AIMessageContent {
@@ -13,8 +15,36 @@ interface Message {
   content: string | AIMessageContent;
 }
 
-export async function GET(req: Request): Promise<Response> {
+export async function GET(req: NextRequest): Promise<NextResponse> {
+  const session = await getServerSession(authOptions);
+
+  // Check if the user is authenticated
+  if (!session) {
+    return NextResponse.json(
+      { error: "Unauthorized" },
+      { status: 401 }
+    );
+  }
   try {
+    // CORS headers
+    const res = NextResponse.next();
+    res.headers.set("Access-Control-Allow-Origin", "http://localhost:3000");
+    res.headers.set("Access-Control-Allow-Methods", "GET");
+    res.headers.set("Access-Control-Allow-Headers", "Content-Type");
+
+    // Handle preflight requests
+    if (req.method === "OPTIONS") {
+      return res;
+    }
+
+    // Ensure only GET requests are processed
+    if (req.method !== "GET") {
+      return NextResponse.json(
+        { error: "Method Not Allowed" },
+        { status: 405 }
+      );
+    }
+
     // Parse query parameters from the URL
     const { searchParams } = new URL(req.url);
     const user_id = searchParams.get("user_id");

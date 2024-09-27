@@ -22,6 +22,8 @@ import { OpenAIEmbeddings } from "@langchain/openai";
 import { PineconeStore } from "@langchain/pinecone";
 import dbConnect from "@/lib/mongodb";
 import Conversation from "@/models/Conversation";
+import { authOptions } from "../auth/[...nextauth]/route";
+import { getServerSession } from "next-auth";
 
 // Type definitions for the request body and database message
 interface RequestBody {
@@ -127,14 +129,35 @@ async function upsertConversationMessage(user_id: string, session_id: string, ne
 }
 
 export async function POST(req: Request): Promise<Response> {
-  if (req.method !== "POST") {
+  const session = await getServerSession(authOptions);
+
+  // Check if the user is authenticated
+  if (!session) {
     return NextResponse.json(
-      { error: "Only POST requests are allowed" },
-      { status: 405 }
+      { error: "Unauthorized" },
+      { status: 401 }
     );
   }
 
   try {
+    // CORS headers
+    const res = NextResponse.next();
+    res.headers.set("Access-Control-Allow-Origin", "http://localhost:3000");
+    res.headers.set("Access-Control-Allow-Methods", "GET");
+    res.headers.set("Access-Control-Allow-Headers", "Content-Type");
+
+    // Handle preflight requests
+    if (req.method === "OPTIONS") {
+      return res;
+    }
+
+    // Ensure only GET requests are processed
+    if (req.method !== "POST") {
+      return NextResponse.json(
+        { error: "Method Not Allowed" },
+        { status: 405 }
+      );
+    }
     console.time("Total execution time");
     console.time("Parse request body");
     const { user_id, session_id, message }: RequestBody = await req.json();
